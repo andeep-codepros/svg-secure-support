@@ -153,10 +153,6 @@ class Validator {
 		return [ 'valid' => true, 'error' => '', 'checks' => $checks ];
 	}
 
-	// -------------------------------------------------------------------------
-	// Private helpers
-	// -------------------------------------------------------------------------
-
 	/**
 	 * Load an SVG file as a DOMDocument with safe libxml settings.
 	 * Disables external entity loading and suppresses parse errors.
