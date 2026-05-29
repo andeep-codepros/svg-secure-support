@@ -1,14 +1,16 @@
 <?php
-/**
- * Admin settings page and security log viewer.
- * Full implementation delivered in Phase 6.
- */
-
 namespace CodePros\SVGSecureSupport\Admin;
+
+use CodePros\SVGSecureSupport\Database;
 
 defined( 'ABSPATH' ) || exit;
 
 class Admin {
+
+	private const PAGE_SETTINGS = 'codepros-svg-secure-support';
+	private const PAGE_LOGS     = 'codepros-svg-secure-support-logs';
+	private const OPTION_GROUP  = 'svgss_settings';
+	private const DEFAULT_CSP   = "default-src 'self'; script-src 'none'; object-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:;";
 
 	/** @var self|null */
 	private static ?self $instance = null;
@@ -22,10 +24,394 @@ class Admin {
 		return self::$instance;
 	}
 
-	/**
-	 * Register hooks. Implemented fully in Phase 6.
-	 */
 	public function init(): void {
-		// Phase 6: register admin_menu, admin_init, admin_notices hooks.
+		add_action( 'admin_menu',                     [ $this, 'register_menus' ] );
+		add_action( 'admin_init',                     [ $this, 'register_settings' ] );
+		add_action( 'admin_post_svgss_purge_logs',    [ $this, 'handle_purge_logs' ] );
+	}
+
+	// -------------------------------------------------------------------------
+	// Menus
+	// -------------------------------------------------------------------------
+
+	public function register_menus(): void {
+		add_options_page(
+			__( 'SVG Secure Support', 'codepros-svg-secure-support' ),
+			__( 'SVG Secure Support', 'codepros-svg-secure-support' ),
+			'manage_options',
+			self::PAGE_SETTINGS,
+			[ $this, 'render_settings_page' ]
+		);
+		add_options_page(
+			__( 'SVG Security Logs', 'codepros-svg-secure-support' ),
+			__( 'SVG Security Logs', 'codepros-svg-secure-support' ),
+			'manage_options',
+			self::PAGE_LOGS,
+			[ $this, 'render_logs_page' ]
+		);
+	}
+
+	// -------------------------------------------------------------------------
+	// Page renderers
+	// -------------------------------------------------------------------------
+
+	public function render_settings_page(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		require CODEPROS_SVGSS_PLUGIN_DIR . 'src/Admin/templates/page-settings.php';
+	}
+
+	public function render_logs_page(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		require CODEPROS_SVGSS_PLUGIN_DIR . 'src/Admin/templates/page-logs.php';
+	}
+
+	// -------------------------------------------------------------------------
+	// Log purge action
+	// -------------------------------------------------------------------------
+
+	public function handle_purge_logs(): void {
+		check_admin_referer( 'svgss_purge_logs' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'Permission denied.', 'codepros-svg-secure-support' ) );
+		}
+
+		$days    = (int) get_option( 'svgss_log_retention_days', 30 );
+		$deleted = Database::get_instance()->purge_old_logs( $days );
+
+		wp_safe_redirect( add_query_arg(
+			[ 'page' => self::PAGE_LOGS, 'svgss_purged' => $deleted ],
+			admin_url( 'options-general.php' )
+		) );
+		exit;
+	}
+
+	// -------------------------------------------------------------------------
+	// Settings registration
+	// -------------------------------------------------------------------------
+
+	public function register_settings(): void {
+
+		// --- Upload Restrictions -----------------------------------------------
+		add_settings_section(
+			'svgss_upload',
+			__( 'Upload Restrictions', 'codepros-svg-secure-support' ),
+			static function (): void {
+				echo '<p>' . esc_html__( 'Control who can upload SVG files and what file constraints apply.', 'codepros-svg-secure-support' ) . '</p>';
+			},
+			self::PAGE_SETTINGS
+		);
+
+		$this->field( 'svgss_upload_capability', __( 'Upload Capability', 'codepros-svg-secure-support' ), 'svgss_upload', [
+			'type'        => 'text',
+			'default'     => 'manage_options',
+			'description' => __( 'WordPress capability required to upload SVG files (e.g. manage_options, upload_files).', 'codepros-svg-secure-support' ),
+			'sanitize'    => 'sanitize_text_field',
+		] );
+
+		$this->field( 'svgss_max_file_size_kb', __( 'Max File Size (KB)', 'codepros-svg-secure-support' ), 'svgss_upload', [
+			'type'        => 'number',
+			'default'     => 1024,
+			'min'         => 1,
+			'max'         => 10240,
+			'description' => __( 'Maximum allowed SVG file size in kilobytes.', 'codepros-svg-secure-support' ),
+			'sanitize'    => 'absint',
+		] );
+
+		$this->field( 'svgss_max_xml_nodes', __( 'Max XML Nodes', 'codepros-svg-secure-support' ), 'svgss_upload', [
+			'type'        => 'number',
+			'default'     => 5000,
+			'min'         => 100,
+			'max'         => 50000,
+			'description' => __( 'Maximum DOM node count in an SVG (guards against node-flood DoS attacks).', 'codepros-svg-secure-support' ),
+			'sanitize'    => 'absint',
+		] );
+
+		$this->field( 'svgss_max_dimension_px', __( 'Max Dimension (px)', 'codepros-svg-secure-support' ), 'svgss_upload', [
+			'type'        => 'number',
+			'default'     => 10000,
+			'min'         => 100,
+			'max'         => 100000,
+			'description' => __( 'Maximum width or height declared in the SVG root element.', 'codepros-svg-secure-support' ),
+			'sanitize'    => 'absint',
+		] );
+
+		// --- Sanitization -------------------------------------------------------
+		add_settings_section(
+			'svgss_sanitization',
+			__( 'Sanitization', 'codepros-svg-secure-support' ),
+			static function (): void {
+				echo '<p>' . esc_html__( 'Additional passes applied to SVG content after the main sanitizer runs.', 'codepros-svg-secure-support' ) . '</p>';
+			},
+			self::PAGE_SETTINGS
+		);
+
+		$this->field( 'svgss_strip_style_tags', __( 'Strip &lt;style&gt; Tags', 'codepros-svg-secure-support' ), 'svgss_sanitization', [
+			'type'        => 'checkbox',
+			'default'     => 1,
+			'label'       => __( 'Remove all <style> blocks from SVG files', 'codepros-svg-secure-support' ),
+			'description' => __( 'CSS in <style> blocks can carry expression() or javascript: payloads. Disable only if your SVGs need embedded styles.', 'codepros-svg-secure-support' ),
+			'sanitize'    => static fn( $v ) => $v ? 1 : 0,
+		] );
+
+		$this->field( 'svgss_strip_xml_comments', __( 'Strip XML Comments', 'codepros-svg-secure-support' ), 'svgss_sanitization', [
+			'type'        => 'checkbox',
+			'default'     => 1,
+			'label'       => __( 'Remove all <!-- XML comments --> from SVG files', 'codepros-svg-secure-support' ),
+			'description' => __( 'Comments can conceal payloads and are never needed for display.', 'codepros-svg-secure-support' ),
+			'sanitize'    => static fn( $v ) => $v ? 1 : 0,
+		] );
+
+		// --- Security Headers ---------------------------------------------------
+		add_settings_section(
+			'svgss_headers',
+			__( 'Security Headers', 'codepros-svg-secure-support' ),
+			static function (): void {
+				echo '<p>' . esc_html__( 'HTTP headers sent when SVG attachment pages are served by WordPress.', 'codepros-svg-secure-support' ) . '</p>';
+			},
+			self::PAGE_SETTINGS
+		);
+
+		$this->field( 'svgss_csp_enabled', __( 'Enable CSP Header', 'codepros-svg-secure-support' ), 'svgss_headers', [
+			'type'    => 'checkbox',
+			'default' => 1,
+			'label'   => __( 'Send Content-Security-Policy on SVG attachment pages', 'codepros-svg-secure-support' ),
+			'sanitize' => static fn( $v ) => $v ? 1 : 0,
+		] );
+
+		$this->field( 'svgss_csp_header', __( 'CSP Header Value', 'codepros-svg-secure-support' ), 'svgss_headers', [
+			'type'        => 'textarea',
+			'default'     => self::DEFAULT_CSP,
+			'description' => __( 'Full Content-Security-Policy directive string. Leave blank to restore the secure default.', 'codepros-svg-secure-support' ),
+			'sanitize'    => static function ( $v ): string {
+				$clean = sanitize_textarea_field( $v );
+				return $clean ?: self::DEFAULT_CSP;
+			},
+		] );
+
+		// --- Rasterization ------------------------------------------------------
+		add_settings_section(
+			'svgss_rasterization',
+			__( 'Rasterization (Maximum Security)', 'codepros-svg-secure-support' ),
+			static function (): void {
+				echo '<p>' . esc_html__( 'Convert uploaded SVGs to a raster image so no active SVG content ever reaches the browser.', 'codepros-svg-secure-support' ) . '</p>';
+			},
+			self::PAGE_SETTINGS
+		);
+
+		$this->field( 'svgss_rasterize_mode', __( 'Rasterize Mode', 'codepros-svg-secure-support' ), 'svgss_rasterization', [
+			'type'    => 'select',
+			'default' => 'disabled',
+			'options' => [
+				'disabled'   => __( 'Disabled — serve sanitized SVG', 'codepros-svg-secure-support' ),
+				'always'     => __( 'Always — convert to raster, discard SVG', 'codepros-svg-secure-support' ),
+				'store_both' => __( 'Store Both — serve raster, keep SVG privately', 'codepros-svg-secure-support' ),
+			],
+			'description' => __( 'Requires Imagick, or GD + rsvg-convert / inkscape on the server.', 'codepros-svg-secure-support' ),
+			'sanitize'    => static function ( $v ): string {
+				return in_array( $v, [ 'disabled', 'always', 'store_both' ], true ) ? $v : 'disabled';
+			},
+		] );
+
+		$this->field( 'svgss_rasterize_format', __( 'Output Format', 'codepros-svg-secure-support' ), 'svgss_rasterization', [
+			'type'    => 'select',
+			'default' => 'png',
+			'options' => [
+				'png'  => 'PNG',
+				'webp' => 'WebP',
+			],
+			'sanitize' => static fn( $v ) => in_array( $v, [ 'png', 'webp' ], true ) ? $v : 'png',
+		] );
+
+		// --- ClamAV -------------------------------------------------------------
+		add_settings_section(
+			'svgss_clamav',
+			__( 'ClamAV Virus Scanning', 'codepros-svg-secure-support' ),
+			static function (): void {
+				echo '<p>' . esc_html__( 'Optionally run ClamAV on uploaded SVGs after sanitization as an additional check.', 'codepros-svg-secure-support' ) . '</p>';
+			},
+			self::PAGE_SETTINGS
+		);
+
+		$this->field( 'svgss_clamav_enabled', __( 'Enable ClamAV', 'codepros-svg-secure-support' ), 'svgss_clamav', [
+			'type'    => 'checkbox',
+			'default' => 0,
+			'label'   => __( 'Scan uploaded SVG files with clamscan', 'codepros-svg-secure-support' ),
+			'sanitize' => static fn( $v ) => $v ? 1 : 0,
+		] );
+
+		$this->field( 'svgss_clamav_path', __( 'Path to clamscan', 'codepros-svg-secure-support' ), 'svgss_clamav', [
+			'type'        => 'text',
+			'default'     => '/usr/bin/clamscan',
+			'description' => __( 'Absolute filesystem path to the clamscan binary.', 'codepros-svg-secure-support' ),
+			'sanitize'    => 'sanitize_text_field',
+		] );
+
+		// --- Logging ------------------------------------------------------------
+		add_settings_section(
+			'svgss_logging',
+			__( 'Security Logging', 'codepros-svg-secure-support' ),
+			static function (): void {
+				echo '<p>' . esc_html__( 'Configure how and where security events are recorded.', 'codepros-svg-secure-support' ) . '</p>';
+			},
+			self::PAGE_SETTINGS
+		);
+
+		$this->field( 'svgss_logging_enabled', __( 'Enable Logging', 'codepros-svg-secure-support' ), 'svgss_logging', [
+			'type'    => 'checkbox',
+			'default' => 1,
+			'label'   => __( 'Record security events', 'codepros-svg-secure-support' ),
+			'sanitize' => static fn( $v ) => $v ? 1 : 0,
+		] );
+
+		$this->field( 'svgss_log_to_wp_debug', __( 'Log to WP Debug', 'codepros-svg-secure-support' ), 'svgss_logging', [
+			'type'    => 'checkbox',
+			'default' => 1,
+			'label'   => __( 'Write entries to wp-content/debug.log', 'codepros-svg-secure-support' ),
+			'sanitize' => static fn( $v ) => $v ? 1 : 0,
+		] );
+
+		$this->field( 'svgss_log_to_database', __( 'Log to Database', 'codepros-svg-secure-support' ), 'svgss_logging', [
+			'type'    => 'checkbox',
+			'default' => 1,
+			'label'   => __( 'Write entries to the svgss_security_log database table', 'codepros-svg-secure-support' ),
+			'sanitize' => static fn( $v ) => $v ? 1 : 0,
+		] );
+
+		$this->field( 'svgss_log_level', __( 'Minimum Log Level', 'codepros-svg-secure-support' ), 'svgss_logging', [
+			'type'    => 'select',
+			'default' => 'warning',
+			'options' => [
+				'info'     => __( 'Info — all events including allowed uploads', 'codepros-svg-secure-support' ),
+				'warning'  => __( 'Warning — blocked uploads and sanitization failures', 'codepros-svg-secure-support' ),
+				'critical' => __( 'Critical — suspicious payloads only', 'codepros-svg-secure-support' ),
+			],
+			'sanitize' => static fn( $v ) => in_array( $v, [ 'info', 'warning', 'critical' ], true ) ? $v : 'warning',
+		] );
+
+		$this->field( 'svgss_log_retention_days', __( 'Log Retention (days)', 'codepros-svg-secure-support' ), 'svgss_logging', [
+			'type'        => 'number',
+			'default'     => 30,
+			'min'         => 1,
+			'max'         => 365,
+			'description' => __( 'Entries older than this many days are removed when logs are purged.', 'codepros-svg-secure-support' ),
+			'sanitize'    => 'absint',
+		] );
+	}
+
+	// -------------------------------------------------------------------------
+	// Helpers
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Register a setting option and wire a settings field for it in one call.
+	 *
+	 * @param array{
+	 *   type:        string,
+	 *   default:     mixed,
+	 *   sanitize:    callable|string,
+	 *   description?: string,
+	 *   label?:      string,
+	 *   options?:    array<string,string>,
+	 *   min?:        int,
+	 *   max?:        int,
+	 * } $args
+	 */
+	private function field( string $option, string $label, string $section, array $args ): void {
+		register_setting( self::OPTION_GROUP, $option, [
+			'sanitize_callback' => $args['sanitize'] ?? 'sanitize_text_field',
+		] );
+
+		add_settings_field(
+			$option,
+			$label,
+			[ $this, 'render_field' ],
+			self::PAGE_SETTINGS,
+			$section,
+			array_merge( $args, [ 'option' => $option, 'label_for' => $option ] )
+		);
+	}
+
+	/**
+	 * Generic field renderer — handles text, number, checkbox, select, textarea.
+	 *
+	 * @param array{option: string, type?: string, default?: mixed, label?: string, description?: string, options?: array<string,string>, min?: int, max?: int} $args
+	 */
+	public function render_field( array $args ): void {
+		$option = $args['option'];
+		$type   = $args['type']    ?? 'text';
+		$value  = get_option( $option, $args['default'] ?? '' );
+		$id     = esc_attr( $option );
+		$name   = esc_attr( $option );
+
+		switch ( $type ) {
+			case 'checkbox':
+				printf(
+					'<label for="%s"><input type="checkbox" id="%s" name="%s" value="1"%s> %s</label>',
+					$id, $id, $name,
+					checked( 1, (int) $value, false ),
+					isset( $args['label'] ) ? esc_html( $args['label'] ) : ''
+				);
+				break;
+
+			case 'select':
+				printf( '<select id="%s" name="%s">', $id, $name );
+				foreach ( $args['options'] ?? [] as $opt_val => $opt_label ) {
+					printf(
+						'<option value="%s"%s>%s</option>',
+						esc_attr( $opt_val ),
+						selected( $value, $opt_val, false ),
+						esc_html( $opt_label )
+					);
+				}
+				echo '</select>';
+				break;
+
+			case 'textarea':
+				printf(
+					'<textarea id="%s" name="%s" rows="3" class="large-text code">%s</textarea>',
+					$id, $name, esc_textarea( (string) $value )
+				);
+				break;
+
+			case 'number':
+				printf(
+					'<input type="number" id="%s" name="%s" value="%s" class="small-text"%s%s>',
+					$id, $name, esc_attr( (string) $value ),
+					isset( $args['min'] ) ? ' min="' . (int) $args['min'] . '"' : '',
+					isset( $args['max'] ) ? ' max="' . (int) $args['max'] . '"' : ''
+				);
+				break;
+
+			default:
+				printf(
+					'<input type="text" id="%s" name="%s" value="%s" class="regular-text">',
+					$id, $name, esc_attr( (string) $value )
+				);
+		}
+
+		if ( ! empty( $args['description'] ) ) {
+			printf( '<p class="description">%s</p>', esc_html( $args['description'] ) );
+		}
+	}
+
+	// -------------------------------------------------------------------------
+	// Public accessors for templates
+	// -------------------------------------------------------------------------
+
+	public static function settings_page_slug(): string {
+		return self::PAGE_SETTINGS;
+	}
+
+	public static function logs_page_slug(): string {
+		return self::PAGE_LOGS;
+	}
+
+	public static function option_group(): string {
+		return self::OPTION_GROUP;
 	}
 }

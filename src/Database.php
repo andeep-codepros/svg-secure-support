@@ -82,6 +82,48 @@ class Database {
 	}
 
 	/**
+	 * Fetch paginated log rows, optionally filtered by severity and/or event_type.
+	 *
+	 * @param  array{severity?: string, event_type?: string} $filters
+	 * @return array{rows: array<int,array<string,string>>, total: int}
+	 */
+	public function get_logs( array $filters = [], int $per_page = 20, int $page = 1 ): array {
+		global $wpdb;
+
+		$table   = $wpdb->prefix . 'svgss_security_log';
+		$clauses = [];
+		$params  = [];
+
+		if ( ! empty( $filters['severity'] ) ) {
+			$clauses[] = 'severity = %s';
+			$params[]  = $filters['severity'];
+		}
+		if ( ! empty( $filters['event_type'] ) ) {
+			$clauses[] = 'event_type = %s';
+			$params[]  = $filters['event_type'];
+		}
+
+		$where = $clauses ? 'WHERE ' . implode( ' AND ', $clauses ) : '';
+
+		$total = (int) ( $params
+			? $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} {$where}", ...$params ) )
+			: $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" ) );
+
+		$offset     = max( 0, $page - 1 ) * $per_page;
+		$row_params = array_merge( $params, [ $per_page, $offset ] );
+
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT * FROM {$table} {$where} ORDER BY created_at DESC LIMIT %d OFFSET %d",
+				...$row_params
+			),
+			ARRAY_A
+		) ?: [];
+
+		return [ 'rows' => $rows, 'total' => $total ];
+	}
+
+	/**
 	 * Delete log rows older than the given number of days.
 	 *
 	 * @return int Number of rows deleted.
