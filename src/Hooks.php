@@ -1,19 +1,9 @@
 <?php
-/**
- * WordPress action/filter wiring for SVG Secure Support.
- *
- * Phase 1 delivers: MIME type allow-listing and upload capability gate.
- * Subsequent phases add sanitization, logging, rasterization, and CSP hooks.
- */
 
 namespace CodePros\SVGSecureSupport;
 
 defined( 'ABSPATH' ) || exit;
 
-/**
- * Registers all WordPress hooks. Contains no business logic — delegates to
- * Validator, Sanitizer, Logger, and Rasterizer as each phase is added.
- */
 class Hooks {
 
 	/** @var self|null */
@@ -28,9 +18,7 @@ class Hooks {
 		return self::$instance;
 	}
 
-	/**
-	 * Register all hooks. Called once from plugins_loaded.
-	 */
+
 	public function init(): void {
 		// Allow SVG MIME type through WordPress's allowed upload list.
 		add_filter( 'upload_mimes', array( $this, 'allow_svg_mime' ) );
@@ -41,22 +29,17 @@ class Hooks {
 		// Capability gate — runs at priority 1 so it fires before any other prefilter.
 		add_filter( 'wp_handle_upload_prefilter', array( $this, 'check_upload_capability' ), 1 );
 
+		// Validation + sanitization pipeline — runs after the capability gate.
+		add_filter( 'wp_handle_upload_prefilter', array( $this, 'handle_upload_prefilter' ), 10 );
+
 		// SVG preview in the media library modal.
 		add_filter( 'wp_prepare_attachment_for_js', array( $this, 'prepare_svg_for_js' ), 10, 3 );
 
 		// Generate minimal metadata (dimensions) for SVG attachments.
 		add_filter( 'wp_generate_attachment_metadata', array( $this, 'generate_svg_metadata' ), 10, 2 );
 	}
-
-	/**
-	 * Static deactivation handler (called by register_deactivation_hook).
-	 * No-op for now; keep logs and settings on deactivation.
-	 */
+	
 	public static function deactivate(): void {}
-
-	// -------------------------------------------------------------------------
-	// Hook callbacks
-	// -------------------------------------------------------------------------
 
 	/**
 	 * Add image/svg+xml to WordPress's allowed upload MIME types.
@@ -117,6 +100,52 @@ class Hooks {
 				'You do not have permission to upload SVG files.',
 				'svg-secure-support'
 			);
+		}
+
+		return $file;
+	}
+
+	/**
+	 * Run the validation and sanitization pipeline on SVG uploads.
+	 *
+	 * Fires at priority 10, after the capability gate (priority 1).
+	 * Non-SVG files are returned immediately. On any failure the error key is
+	 * set so WordPress surfaces the message to the user and discards the file.
+	 *
+	 * @param  array<string,string> $file  WordPress upload array.
+	 * @return array<string,string>
+	 */
+	public function handle_upload_prefilter( array $file ): array {
+		if ( 'svg' !== strtolower( pathinfo( $file['name'] ?? '', PATHINFO_EXTENSION ) ) ) {
+			return $file;
+		}
+
+		// Abort early if a prior filter already set an error (e.g. capability gate).
+		if ( ! empty( $file['error'] ) ) {
+			return $file;
+		}
+
+		$tmp      = $file['tmp_name'] ?? '';
+		$name     = $file['name']     ?? '';
+		$size     = isset( $file['size'] ) ? (int) $file['size'] : 0;
+
+		// --- Validation -------------------------------------------------------
+		$validation = Validator::get_instance()->validate( $tmp, $name, $size );
+
+		if ( ! $validation['valid'] ) {
+			$file['error'] = $validation['error'];
+			return $file;
+		}
+
+		// --- Sanitization -----------------------------------------------------
+		$sanitization = Sanitizer::get_instance()->sanitize_file( $tmp );
+
+		if ( ! $sanitization['success'] ) {
+			$file['error'] = esc_html__(
+				'SVG file was rejected because it could not be safely sanitized.',
+				'codepros-svg-secure-support'
+			);
+			return $file;
 		}
 
 		return $file;
@@ -192,10 +221,6 @@ class Hooks {
 	// Private helpers
 	// -------------------------------------------------------------------------
 
-	/**
-	 * Return the required WP capability for SVG uploads.
-	 * Reads the svgss_upload_capability option; falls back to manage_options.
-	 */
 	private function upload_capability(): string {
 		$cap = get_option( 'svgss_upload_capability', 'manage_options' );
 		return is_string( $cap ) && ! empty( $cap ) ? $cap : 'manage_options';
