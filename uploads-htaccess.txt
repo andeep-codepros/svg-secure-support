@@ -1,0 +1,41 @@
+# CodePros SVG Secure Support — uploads directory hardening
+#
+# HOW TO USE:
+#   Append (or merge) the contents of this file into:
+#   wp-content/uploads/.htaccess
+#
+#   This file is NOT applied automatically. A site administrator must copy
+#   it to the uploads directory. WordPress regenerates uploads/.htaccess on
+#   certain actions (e.g. saving Permalink settings), so you may need to
+#   re-apply this after those operations.
+#
+#   Requires Apache with mod_headers enabled.
+# ---------------------------------------------------------------------------
+
+# 1. Prevent PHP (and other server-side scripts) from executing in uploads.
+#    Attackers sometimes try to upload a PHP file disguised as an SVG.
+#    This rule ensures the server returns the raw file content instead of
+#    executing it, regardless of how the file was named.
+<FilesMatch "\.(?i:php[0-9]?|phtml|phar|asp|aspx|jsp|cgi|pl|py|sh)$">
+    deny from all
+</FilesMatch>
+
+# 2. Enforce the correct MIME type for SVG files.
+#    Some Apache / server configurations serve SVG as text/plain or
+#    application/octet-stream. This ensures browsers receive the correct
+#    Content-Type so CSP headers (below) are applied.
+<IfModule mod_mime.c>
+    AddType image/svg+xml .svg .svgz
+    AddEncoding gzip .svgz
+</IfModule>
+
+# 3. Security headers on SVG responses.
+#    Mirrors what Headers::maybe_send_svg_headers() sends via PHP, but
+#    applied at the Apache layer for direct file access (bypassing WordPress).
+<IfModule mod_headers.c>
+    <FilesMatch "\.svgz?$">
+        Header always set X-Content-Type-Options "nosniff"
+        Header always set X-Frame-Options "SAMEORIGIN"
+        Header always set Content-Security-Policy "default-src 'self'; script-src 'none'; object-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:;"
+    </FilesMatch>
+</IfModule>
