@@ -100,6 +100,7 @@ class Hooks {
 				'You do not have permission to upload SVG files.',
 				'svg-secure-support'
 			);
+			Logger::get_instance()->log_capability_blocked( $file['name'] ?? '' );
 		}
 
 		return $file;
@@ -134,11 +135,14 @@ class Hooks {
 
 		if ( ! $validation['valid'] ) {
 			$file['error'] = $validation['error'];
+			Logger::get_instance()->log_validation_failure( $name, $validation['error'], $validation['checks'] );
 			return $file;
 		}
 
 		// --- Sanitization -----------------------------------------------------
 		$sanitization = Sanitizer::get_instance()->sanitize_file( $tmp );
+
+		Logger::get_instance()->log_sanitization_report( $name, $sanitization );
 
 		if ( ! $sanitization['success'] ) {
 			$file['error'] = esc_html__(
