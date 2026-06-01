@@ -151,53 +151,7 @@ class Hooks {
 			);
 			return $file;
 		}
-
-		// --- Rasterization (optional) -----------------------------------------
-		$rasterize_mode = (string) get_option( 'svgss_rasterize_mode', 'always' );
-
-		if ( 'disabled' !== $rasterize_mode ) {
-			$rasterizer = Rasterizer::get_instance();
-
-			if ( ! $rasterizer->is_available() ) {
-				Logger::get_instance()->log(
-					'upload_allowed',
-					'warning',
-					$name,
-					'Rasterization requested but no engine available (Imagick or GD+rsvg-convert/inkscape required)'
-				);
-			} else {
-				$format = (string) get_option( 'svgss_rasterize_format', 'png' );
-				$result = $rasterizer->rasterize( $tmp, $format );
-
-				if ( $result['success'] ) {
-					if ( 'store_both' === $rasterize_mode ) {
-						// Keep the original sanitized SVG alongside the raster copy.
-						// WP will move $tmp to uploads; we copy the raster beside it.
-						copy( $result['output_path'], $tmp . '.' . $format );
-					}
-
-					// Point WP at the raster file instead of the SVG.
-					rename( $result['output_path'], $tmp );
-					$file['name'] = preg_replace( '/\.svg$/i', '.' . $format, $name );
-					$file['type'] = $result['mime'];
-
-					Logger::get_instance()->log(
-						'upload_allowed',
-						'info',
-						$name,
-						'SVG rasterized to ' . strtoupper( $format ) . ' (' . $rasterize_mode . ' mode)'
-					);
-				} else {
-					Logger::get_instance()->log(
-						'upload_allowed',
-						'warning',
-						$name,
-						'Rasterization failed, serving sanitized SVG instead: ' . $result['error']
-					);
-				}
-			}
-		}
-
+		
 		return $file;
 	}
 

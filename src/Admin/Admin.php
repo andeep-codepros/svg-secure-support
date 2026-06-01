@@ -193,64 +193,6 @@ class Admin {
 			},
 		] );
 
-		// --- Rasterization ------------------------------------------------------
-		add_settings_section(
-			'svgss_rasterization',
-			__( 'Rasterization (Maximum Security)', 'codepros-svg-secure-support' ),
-			static function (): void {
-				echo '<p>' . esc_html__( 'Convert uploaded SVGs to a raster image so no active SVG content ever reaches the browser.', 'codepros-svg-secure-support' ) . '</p>';
-			},
-			self::PAGE_SETTINGS
-		);
-
-		$this->field( 'svgss_rasterize_mode', __( 'Rasterize Mode', 'codepros-svg-secure-support' ), 'svgss_rasterization', [
-			'type'    => 'select',
-			'default' => 'disabled',
-			'options' => [
-				'disabled'   => __( 'Disabled — serve sanitized SVG', 'codepros-svg-secure-support' ),
-				'always'     => __( 'Always — convert to raster, discard SVG', 'codepros-svg-secure-support' ),
-				'store_both' => __( 'Store Both — serve raster, keep SVG privately', 'codepros-svg-secure-support' ),
-			],
-			'description' => __( 'Requires Imagick, or GD + rsvg-convert / inkscape on the server.', 'codepros-svg-secure-support' ),
-			'sanitize'    => static function ( $v ): string {
-				return in_array( $v, [ 'disabled', 'always', 'store_both' ], true ) ? $v : 'disabled';
-			},
-		] );
-
-		$this->field( 'svgss_rasterize_format', __( 'Output Format', 'codepros-svg-secure-support' ), 'svgss_rasterization', [
-			'type'    => 'select',
-			'default' => 'png',
-			'options' => [
-				'png'  => 'PNG',
-				'webp' => 'WebP',
-			],
-			'sanitize' => static fn( $v ) => in_array( $v, [ 'png', 'webp' ], true ) ? $v : 'png',
-		] );
-
-		// --- ClamAV -------------------------------------------------------------
-		add_settings_section(
-			'svgss_clamav',
-			__( 'ClamAV Virus Scanning', 'codepros-svg-secure-support' ),
-			static function (): void {
-				echo '<p>' . esc_html__( 'Optionally run ClamAV on uploaded SVGs after sanitization as an additional check.', 'codepros-svg-secure-support' ) . '</p>';
-			},
-			self::PAGE_SETTINGS
-		);
-
-		$this->field( 'svgss_clamav_enabled', __( 'Enable ClamAV', 'codepros-svg-secure-support' ), 'svgss_clamav', [
-			'type'    => 'checkbox',
-			'default' => 0,
-			'label'   => __( 'Scan uploaded SVG files with clamscan', 'codepros-svg-secure-support' ),
-			'sanitize' => static fn( $v ) => $v ? 1 : 0,
-		] );
-
-		$this->field( 'svgss_clamav_path', __( 'Path to clamscan', 'codepros-svg-secure-support' ), 'svgss_clamav', [
-			'type'        => 'text',
-			'default'     => '/usr/bin/clamscan',
-			'description' => __( 'Absolute filesystem path to the clamscan binary.', 'codepros-svg-secure-support' ),
-			'sanitize'    => 'sanitize_text_field',
-		] );
-
 		// --- Logging ------------------------------------------------------------
 		add_settings_section(
 			'svgss_logging',

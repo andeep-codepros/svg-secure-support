@@ -286,11 +286,6 @@ $imagick->writeImage($output_path);
 
 **Output naming:** Replace `.svg` extension with `.png` (or `.webp`). The attachment MIME type is updated in WP postmeta to `image/png` (or `image/webp`).
 
-**Settings option:** `svgss_rasterize_mode` with values:
-- `disabled` — skip rasterization, serve sanitized SVG (default)
-- `always` — always convert to PNG/WebP, discard SVG
-- `store_both` — store sanitized SVG privately, serve raster publicly
-
 **Where it runs:** Called from `Hooks::handle_upload_prefilter()` after sanitization, before the file is moved to uploads. If rasterization succeeds, `$file['name']` is updated to the `.png` filename and `$file['type']` to `image/png`.
 
 Settings sub-page under **Settings → SVG Secure Support**. Log viewer at **Settings → SVG Security Logs**. Uses WordPress Settings API (`register_setting`, `add_settings_section`, `add_settings_field`).
@@ -313,10 +308,6 @@ Settings sub-page under **Settings → SVG Secure Support**. Log viewer at **Set
 | `svgss_log_level` | `warning` | Min severity to log |
 | `svgss_csp_enabled` | `1` | Send CSP headers |
 | `svgss_csp_header` | (secure default) | Full CSP value |
-| `svgss_clamav_enabled` | `0` | Enable ClamAV scan |
-| `svgss_clamav_path` | `/usr/bin/clamscan` | Path to clamscan binary |
-| `svgss_rasterize_mode` | `disabled` | Rasterization mode: `disabled`, `always`, `store_both` |
-| `svgss_rasterize_format` | `png` | Output format: `png` or `webp` |
 
 ---
 
@@ -387,7 +378,6 @@ Each phase is independently shippable and testable before the next begins.
 - Imagick path (preferred): converts via `Imagick::readImage()` + `setImageFormat()` + `writeImage()`
 - GD fallback: delegates to `rsvg-convert` or `inkscape` via `exec()` if available
 - `$file['name']`, `$file['type']` updated in the WP upload pipeline if rasterization succeeds
-- `svgss_rasterize_mode` setting: `disabled` | `always` | `store_both`
 - Warning logged if rasterization requested but no engine available
 **Verify:** Enable rasterization in settings. Upload a clean SVG. Confirm only a `.png` file appears in the media library. Confirm no `.svg` in uploads directory (in `always` mode). Disable → confirm SVG uploads work as before.
 

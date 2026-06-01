@@ -29,10 +29,6 @@ $option_keys = array(
 	'svgss_log_level',
 	'svgss_csp_enabled',
 	'svgss_csp_header',
-	'svgss_clamav_enabled',
-	'svgss_clamav_path',
-	'svgss_rasterize_mode',
-	'svgss_rasterize_format',
 	'svgss_db_version',
 );
 
