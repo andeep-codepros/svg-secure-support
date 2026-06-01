@@ -1,0 +1,349 @@
+# Copyright (C) 2026 CodePros
+# This file is distributed under the GPL v2 or later.
+msgid ""
+msgstr ""
+"Project-Id-Version: CodePros SVG Secure Support 1.0.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/codepros-svg-secure-support\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-06-01T06:39:00+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: codepros-svg-secure-support\n"
+
+#. Plugin Name of the plugin
+#: codepros-svg-secure-support.php
+msgid "CodePros SVG Secure Support"
+msgstr ""
+
+#. Plugin URI of the plugin
+#: codepros-svg-secure-support.php
+msgid "https://codepros.ai/codepros-svg-secure-support"
+msgstr ""
+
+#. Description of the plugin
+#: codepros-svg-secure-support.php
+msgid "Highly secure SVG upload support for WordPress. Validates, sanitizes, and optionally rasterizes SVG files through a multi-layer security pipeline."
+msgstr ""
+
+#. Author of the plugin
+#: codepros-svg-secure-support.php
+msgid "CodePros"
+msgstr ""
+
+#. Author URI of the plugin
+#: codepros-svg-secure-support.php
+msgid "https://codepros.ai"
+msgstr ""
+
+#: codepros-svg-secure-support.php:38
+msgid "Composer dependencies are missing. Please run `composer install` in the plugin directory."
+msgstr ""
+
+#: codepros-svg-secure-support.php:77
+#: src/Admin/templates/page-logs.php:62
+#: src/Admin/templates/page-settings.php:18
+msgid "Settings"
+msgstr ""
+
+#: src/Admin/Admin.php:38
+msgid " SVG Secure Support"
+msgstr ""
+
+#: src/Admin/Admin.php:39
+msgid "SVG Secure Support"
+msgstr ""
+
+#: src/Admin/Admin.php:73
+msgid "Permission denied."
+msgstr ""
+
+#: src/Admin/Admin.php:95
+msgid "Upload Restrictions"
+msgstr ""
+
+#: src/Admin/Admin.php:97
+msgid "Control who can upload SVG files and what file constraints apply."
+msgstr ""
+
+#: src/Admin/Admin.php:102
+msgid "Upload Capability"
+msgstr ""
+
+#: src/Admin/Admin.php:105
+msgid "WordPress capability required to upload SVG files (e.g. manage_options, upload_files)."
+msgstr ""
+
+#: src/Admin/Admin.php:109
+msgid "Max File Size (KB)"
+msgstr ""
+
+#: src/Admin/Admin.php:114
+msgid "Maximum allowed SVG file size in kilobytes."
+msgstr ""
+
+#: src/Admin/Admin.php:118
+msgid "Max XML Nodes"
+msgstr ""
+
+#: src/Admin/Admin.php:123
+msgid "Maximum DOM node count in an SVG (guards against node-flood DoS attacks)."
+msgstr ""
+
+#: src/Admin/Admin.php:127
+msgid "Max Dimension (px)"
+msgstr ""
+
+#: src/Admin/Admin.php:132
+msgid "Maximum width or height declared in the SVG root element."
+msgstr ""
+
+#: src/Admin/Admin.php:139
+msgid "Sanitization"
+msgstr ""
+
+#: src/Admin/Admin.php:141
+msgid "Additional passes applied to SVG content after the main sanitizer runs."
+msgstr ""
+
+#: src/Admin/Admin.php:146
+msgid "Strip &lt;style&gt; Tags"
+msgstr ""
+
+#: src/Admin/Admin.php:149
+msgid "Remove all <style> blocks from SVG files"
+msgstr ""
+
+#: src/Admin/Admin.php:150
+msgid "CSS in <style> blocks can carry expression() or javascript: payloads. Disable only if your SVGs need embedded styles."
+msgstr ""
+
+#: src/Admin/Admin.php:154
+msgid "Strip XML Comments"
+msgstr ""
+
+#: src/Admin/Admin.php:157
+msgid "Remove all <!-- XML comments --> from SVG files"
+msgstr ""
+
+#: src/Admin/Admin.php:158
+msgid "Comments can conceal payloads and are never needed for display."
+msgstr ""
+
+#: src/Admin/Admin.php:165
+msgid "Security Headers"
+msgstr ""
+
+#: src/Admin/Admin.php:167
+msgid "HTTP headers sent when SVG attachment pages are served by WordPress."
+msgstr ""
+
+#: src/Admin/Admin.php:172
+msgid "Enable CSP Header"
+msgstr ""
+
+#: src/Admin/Admin.php:175
+msgid "Send Content-Security-Policy on SVG attachment pages"
+msgstr ""
+
+#: src/Admin/Admin.php:179
+msgid "CSP Header Value"
+msgstr ""
+
+#: src/Admin/Admin.php:182
+msgid "Full Content-Security-Policy directive string. Leave blank to restore the secure default."
+msgstr ""
+
+#: src/Admin/Admin.php:192
+msgid "Security Logging"
+msgstr ""
+
+#: src/Admin/Admin.php:194
+msgid "Configure how and where security events are recorded."
+msgstr ""
+
+#: src/Admin/Admin.php:199
+msgid "Enable Logging"
+msgstr ""
+
+#: src/Admin/Admin.php:202
+msgid "Record security events"
+msgstr ""
+
+#: src/Admin/Admin.php:206
+msgid "Log to WP Debug"
+msgstr ""
+
+#: src/Admin/Admin.php:209
+msgid "Write entries to wp-content/debug.log"
+msgstr ""
+
+#: src/Admin/Admin.php:213
+msgid "Log to Database"
+msgstr ""
+
+#: src/Admin/Admin.php:216
+msgid "Write entries to the svgss_security_log database table"
+msgstr ""
+
+#: src/Admin/Admin.php:220
+msgid "Minimum Log Level"
+msgstr ""
+
+#: src/Admin/Admin.php:224
+msgid "Info — all events including allowed uploads"
+msgstr ""
+
+#: src/Admin/Admin.php:225
+msgid "Warning — blocked uploads and sanitization failures"
+msgstr ""
+
+#: src/Admin/Admin.php:226
+msgid "Critical — suspicious payloads only"
+msgstr ""
+
+#: src/Admin/Admin.php:231
+msgid "Log Retention (days)"
+msgstr ""
+
+#: src/Admin/Admin.php:236
+msgid "Entries older than this many days are removed when logs are purged."
+msgstr ""
+
+#: src/Admin/templates/page-logs.php:65
+#: src/Admin/templates/page-settings.php:21
+msgid "Security Logs"
+msgstr ""
+
+#. translators: %d: number of log entries deleted
+#: src/Admin/templates/page-logs.php:75
+#, php-format
+msgid "Purged %d log entries."
+msgstr ""
+
+#: src/Admin/templates/page-logs.php:91
+msgid "All Severities"
+msgstr ""
+
+#: src/Admin/templates/page-logs.php:100
+msgid "All Event Types"
+msgstr ""
+
+#: src/Admin/templates/page-logs.php:108
+msgid "Filter"
+msgstr ""
+
+#: src/Admin/templates/page-logs.php:112
+msgid "Clear"
+msgstr ""
+
+#: src/Admin/templates/page-logs.php:120
+msgid "Delete log entries older than the configured retention period?"
+msgstr ""
+
+#. translators: %d: retention days
+#: src/Admin/templates/page-logs.php:127
+#, php-format
+msgid "Purge Entries Older Than %d Days"
+msgstr ""
+
+#. translators: %d: total log entries
+#: src/Admin/templates/page-logs.php:143
+#, php-format
+msgid "%d total entries"
+msgstr ""
+
+#: src/Admin/templates/page-logs.php:152
+msgid "Date / Time (UTC)"
+msgstr ""
+
+#: src/Admin/templates/page-logs.php:153
+msgid "Severity"
+msgstr ""
+
+#: src/Admin/templates/page-logs.php:154
+msgid "Event"
+msgstr ""
+
+#: src/Admin/templates/page-logs.php:155
+msgid "File"
+msgstr ""
+
+#: src/Admin/templates/page-logs.php:156
+msgid "Details"
+msgstr ""
+
+#: src/Admin/templates/page-logs.php:157
+msgid "User"
+msgstr ""
+
+#: src/Admin/templates/page-logs.php:158
+msgid "IP Address"
+msgstr ""
+
+#: src/Admin/templates/page-logs.php:165
+msgid "No log entries found."
+msgstr ""
+
+#: src/Admin/templates/page-logs.php:190
+msgid "guest"
+msgstr ""
+
+#. translators: 1: current page, 2: total pages
+#: src/Admin/templates/page-logs.php:207
+#, php-format
+msgid "Page %1$d of %2$d"
+msgstr ""
+
+#: src/Admin/templates/page-logs.php:216
+msgid "Previous"
+msgstr ""
+
+#: src/Admin/templates/page-logs.php:221
+msgid "Next"
+msgstr ""
+
+#: src/Admin/templates/page-settings.php:31
+msgid "Save Settings"
+msgstr ""
+
+#: src/Hooks.php:148
+msgid "SVG file was rejected because it could not be safely sanitized."
+msgstr ""
+
+#: src/Validator.php:38
+msgid "File must have an .svg extension."
+msgstr ""
+
+#: src/Validator.php:47
+msgid "Filename contains a disallowed extension pattern."
+msgstr ""
+
+#: src/Validator.php:67
+msgid "File does not appear to be a valid SVG."
+msgstr ""
+
+#. translators: %d: maximum allowed file size in KB
+#: src/Validator.php:83
+#, php-format
+msgid "SVG file exceeds the maximum allowed size of %d KB."
+msgstr ""
+
+#: src/Validator.php:96
+msgid "SVG file could not be parsed as valid XML."
+msgstr ""
+
+#. translators: 1: node count found, 2: maximum allowed
+#: src/Validator.php:113
+#, php-format
+msgid "SVG contains too many XML nodes (%1$d). Maximum allowed is %2$d."
+msgstr ""
+
+#. translators: %d: maximum dimension in pixels
+#: src/Validator.php:145
+#, php-format
+msgid "SVG dimensions exceed the maximum allowed size of %d pixels."
+msgstr ""

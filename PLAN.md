@@ -20,7 +20,6 @@ codepros-svg-secure-support/
 │   ├── Sanitizer.php                       ← Wrapper around enshrined/svg-sanitize + final scan
 │   ├── AllowedTags.php                     ← Custom TagInterface for enshrined sanitizer
 │   ├── AllowedAttributes.php               ← Custom AttributeInterface for enshrined sanitizer
-│   ├── Rasterizer.php                      ← Convert sanitized SVG → PNG/WebP (maximum security)
 │   ├── Logger.php                          ← Security event logging (WP debug log + DB)
 │   ├── Hooks.php                           ← WordPress action/filter wiring
 │   ├── Headers.php                         ← CSP + security headers
@@ -252,42 +251,6 @@ Default CSP: `default-src 'self'; script-src 'none'; object-src 'none'; style-sr
 
 ---
 
-### `CodePros\SVGSecureSupport\Rasterizer` — `src/Rasterizer.php`
-
-Maximum-security option. After sanitization, converts the SVG to PNG (or WebP) and stores the raster image in its place. The original SVG file is either discarded or stored in a private location. The browser only ever receives a static raster image — all active SVG behavior is eliminated.
-
-**Dependency detection at runtime (no Composer dependency added):**
-```php
-// Priority order: Imagick → GD
-public function is_available(): bool {
-    return extension_loaded('imagick') || (extension_loaded('gd') && function_exists('imagecreatefromstring'));
-}
-```
-
-**Conversion method:**
-```php
-public function rasterize(string $svg_path, string $output_format = 'png'): array
-// Returns: ['success' => bool, 'output_path' => string, 'mime' => string, 'error' => string]
-```
-
-**Imagick path (preferred — supports SVG natively via librsvg):**
-```php
-$imagick = new \Imagick();
-$imagick->setBackgroundColor(new \ImagickPixel('transparent'));
-$imagick->readImage($svg_path);
-$imagick->setImageFormat($output_format === 'webp' ? 'webp' : 'png');
-$imagick->setImageAlphaChannel(\Imagick::ALPHACHANNEL_ACTIVATE);
-$imagick->writeImage($output_path);
-```
-
-**GD fallback path:**
-- GD cannot natively parse SVG. If only GD is available, the Rasterizer performs an `exec()` call to `rsvg-convert` or `inkscape --export-png` (if available on the server) as a system command.
-- If neither is available → `is_available()` returns false and rasterization is skipped (plugin logs a warning, falls back to sanitized SVG).
-
-**Output naming:** Replace `.svg` extension with `.png` (or `.webp`). The attachment MIME type is updated in WP postmeta to `image/png` (or `image/webp`).
-
-**Where it runs:** Called from `Hooks::handle_upload_prefilter()` after sanitization, before the file is moved to uploads. If rasterization succeeds, `$file['name']` is updated to the `.png` filename and `$file['type']` to `image/png`.
-
 Settings sub-page under **Settings → SVG Secure Support**. Log viewer at **Settings → SVG Security Logs**. Uses WordPress Settings API (`register_setting`, `add_settings_section`, `add_settings_field`).
 
 **Settings options:**
@@ -366,20 +329,6 @@ Each phase is independently shippable and testable before the next begins.
 - `X-Frame-Options: SAMEORIGIN` on SVG attachment pages
 - `uploads-htaccess.txt` snippet for Apache (disables PHP execution, sets SVG MIME type, adds headers via `mod_headers`)
 **Verify:** Upload a clean SVG. Visit its attachment page URL. Run `curl -I https://site/?attachment_id=X` — confirm `Content-Security-Policy`, `X-Content-Type-Options`, `X-Frame-Options` headers present.
-
----
-
-### Phase 5 — Rasterization (Maximum Security)
-**Files:** `src/Rasterizer.php`, `src/Hooks.php` (rasterization hook)
-**Goal:** Optionally convert every uploaded SVG to a raster image (PNG or WebP) so that absolutely no active SVG behavior ever reaches the browser.
-**Delivers:**
-- `Rasterizer::is_available()` detects Imagick or GD+rsvg at runtime
-- `Rasterizer::rasterize(string $svg_path, string $format): array`
-- Imagick path (preferred): converts via `Imagick::readImage()` + `setImageFormat()` + `writeImage()`
-- GD fallback: delegates to `rsvg-convert` or `inkscape` via `exec()` if available
-- `$file['name']`, `$file['type']` updated in the WP upload pipeline if rasterization succeeds
-- Warning logged if rasterization requested but no engine available
-**Verify:** Enable rasterization in settings. Upload a clean SVG. Confirm only a `.png` file appears in the media library. Confirm no `.svg` in uploads directory (in `always` mode). Disable → confirm SVG uploads work as before.
 
 ---
 

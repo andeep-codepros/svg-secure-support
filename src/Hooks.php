@@ -98,7 +98,7 @@ class Hooks {
 		if ( ! current_user_can( $this->upload_capability() ) ) {
 			$file['error'] = esc_html__(
 				'You do not have permission to upload SVG files.',
-				'svg-secure-support'
+				'codepros-svg-secure-support'
 			);
 			Logger::get_instance()->log_capability_blocked( $file['name'] ?? '' );
 		}

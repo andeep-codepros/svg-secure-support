@@ -7,9 +7,8 @@ defined( 'ABSPATH' ) || exit;
 
 class Admin {
 
-	private const PAGE_SETTINGS = 'codepros-svg-secure-support';
-	private const PAGE_LOGS     = 'codepros-svg-secure-support-logs';
-	private const OPTION_GROUP  = 'svgss_settings';
+	private const PAGE_SLUG    = 'codepros-svg-secure-support';
+	private const OPTION_GROUP = 'svgss_settings';
 	private const DEFAULT_CSP   = "default-src 'self'; script-src 'none'; object-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:;";
 
 	/** @var self|null */
@@ -36,18 +35,11 @@ class Admin {
 
 	public function register_menus(): void {
 		add_options_page(
-			__( 'SVG Secure Support', 'codepros-svg-secure-support' ),
+			__( ' SVG Secure Support', 'codepros-svg-secure-support' ),
 			__( 'SVG Secure Support', 'codepros-svg-secure-support' ),
 			'manage_options',
-			self::PAGE_SETTINGS,
-			[ $this, 'render_settings_page' ]
-		);
-		add_options_page(
-			__( 'SVG Security Logs', 'codepros-svg-secure-support' ),
-			__( 'SVG Security Logs', 'codepros-svg-secure-support' ),
-			'manage_options',
-			self::PAGE_LOGS,
-			[ $this, 'render_logs_page' ]
+			self::PAGE_SLUG,
+			[ $this, 'render_page' ]
 		);
 	}
 
@@ -55,18 +47,19 @@ class Admin {
 	// Page renderers
 	// -------------------------------------------------------------------------
 
-	public function render_settings_page(): void {
+	public function render_page(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
-		require CODEPROS_SVGSS_PLUGIN_DIR . 'src/Admin/templates/page-settings.php';
-	}
-
-	public function render_logs_page(): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			return;
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'settings';
+		switch ( $tab ) {
+			case 'logs':
+				require CODEPROS_SVGSS_PLUGIN_DIR . 'src/Admin/templates/page-logs.php';
+				break;
+			default:
+				require CODEPROS_SVGSS_PLUGIN_DIR . 'src/Admin/templates/page-settings.php';
 		}
-		require CODEPROS_SVGSS_PLUGIN_DIR . 'src/Admin/templates/page-logs.php';
 	}
 
 	// -------------------------------------------------------------------------
@@ -84,7 +77,7 @@ class Admin {
 		$deleted = Database::get_instance()->purge_old_logs( $days );
 
 		wp_safe_redirect( add_query_arg(
-			[ 'page' => self::PAGE_LOGS, 'svgss_purged' => $deleted ],
+			[ 'page' => self::PAGE_SLUG, 'tab' => 'logs', 'svgss_purged' => $deleted ],
 			admin_url( 'options-general.php' )
 		) );
 		exit;
@@ -103,7 +96,7 @@ class Admin {
 			static function (): void {
 				echo '<p>' . esc_html__( 'Control who can upload SVG files and what file constraints apply.', 'codepros-svg-secure-support' ) . '</p>';
 			},
-			self::PAGE_SETTINGS
+			self::PAGE_SLUG
 		);
 
 		$this->field( 'svgss_upload_capability', __( 'Upload Capability', 'codepros-svg-secure-support' ), 'svgss_upload', [
@@ -147,7 +140,7 @@ class Admin {
 			static function (): void {
 				echo '<p>' . esc_html__( 'Additional passes applied to SVG content after the main sanitizer runs.', 'codepros-svg-secure-support' ) . '</p>';
 			},
-			self::PAGE_SETTINGS
+			self::PAGE_SLUG
 		);
 
 		$this->field( 'svgss_strip_style_tags', __( 'Strip &lt;style&gt; Tags', 'codepros-svg-secure-support' ), 'svgss_sanitization', [
@@ -173,7 +166,7 @@ class Admin {
 			static function (): void {
 				echo '<p>' . esc_html__( 'HTTP headers sent when SVG attachment pages are served by WordPress.', 'codepros-svg-secure-support' ) . '</p>';
 			},
-			self::PAGE_SETTINGS
+			self::PAGE_SLUG
 		);
 
 		$this->field( 'svgss_csp_enabled', __( 'Enable CSP Header', 'codepros-svg-secure-support' ), 'svgss_headers', [
@@ -200,7 +193,7 @@ class Admin {
 			static function (): void {
 				echo '<p>' . esc_html__( 'Configure how and where security events are recorded.', 'codepros-svg-secure-support' ) . '</p>';
 			},
-			self::PAGE_SETTINGS
+			self::PAGE_SLUG
 		);
 
 		$this->field( 'svgss_logging_enabled', __( 'Enable Logging', 'codepros-svg-secure-support' ), 'svgss_logging', [
@@ -272,7 +265,7 @@ class Admin {
 			$option,
 			$label,
 			[ $this, 'render_field' ],
-			self::PAGE_SETTINGS,
+			self::PAGE_SLUG,
 			$section,
 			array_merge( $args, [ 'option' => $option, 'label_for' => $option ] )
 		);
@@ -287,21 +280,19 @@ class Admin {
 		$option = $args['option'];
 		$type   = $args['type']    ?? 'text';
 		$value  = get_option( $option, $args['default'] ?? '' );
-		$id     = esc_attr( $option );
-		$name   = esc_attr( $option );
 
 		switch ( $type ) {
 			case 'checkbox':
 				printf(
-					'<label for="%s"><input type="checkbox" id="%s" name="%s" value="1"%s> %s</label>',
-					$id, $id, $name,
+					'<label for="%1$s"><input type="checkbox" id="%1$s" name="%1$s" value="1"%2$s> %3$s</label>',
+					esc_attr( $option ),
 					checked( 1, (int) $value, false ),
 					isset( $args['label'] ) ? esc_html( $args['label'] ) : ''
 				);
 				break;
 
 			case 'select':
-				printf( '<select id="%s" name="%s">', $id, $name );
+				printf( '<select id="%1$s" name="%1$s">', esc_attr( $option ) );
 				foreach ( $args['options'] ?? [] as $opt_val => $opt_label ) {
 					printf(
 						'<option value="%s"%s>%s</option>',
@@ -315,24 +306,27 @@ class Admin {
 
 			case 'textarea':
 				printf(
-					'<textarea id="%s" name="%s" rows="3" class="large-text code">%s</textarea>',
-					$id, $name, esc_textarea( (string) $value )
+					'<textarea id="%1$s" name="%1$s" rows="3" class="large-text code">%2$s</textarea>',
+					esc_attr( $option ),
+					esc_textarea( (string) $value )
 				);
 				break;
 
 			case 'number':
 				printf(
-					'<input type="number" id="%s" name="%s" value="%s" class="small-text"%s%s>',
-					$id, $name, esc_attr( (string) $value ),
-					isset( $args['min'] ) ? ' min="' . (int) $args['min'] . '"' : '',
-					isset( $args['max'] ) ? ' max="' . (int) $args['max'] . '"' : ''
+					'<input type="number" id="%1$s" name="%1$s" value="%2$s" class="small-text"%3$s%4$s>',
+					esc_attr( $option ),
+					esc_attr( (string) $value ),
+					isset( $args['min'] ) ? ' min="' . absint( $args['min'] ) . '"' : '',
+					isset( $args['max'] ) ? ' max="' . absint( $args['max'] ) . '"' : ''
 				);
 				break;
 
 			default:
 				printf(
-					'<input type="text" id="%s" name="%s" value="%s" class="regular-text">',
-					$id, $name, esc_attr( (string) $value )
+					'<input type="text" id="%1$s" name="%1$s" value="%2$s" class="regular-text">',
+					esc_attr( $option ),
+					esc_attr( (string) $value )
 				);
 		}
 
@@ -345,12 +339,12 @@ class Admin {
 	// Public accessors for templates
 	// -------------------------------------------------------------------------
 
-	public static function settings_page_slug(): string {
-		return self::PAGE_SETTINGS;
+	public static function tab_url( string $tab ): string {
+		return admin_url( 'options-general.php?page=' . self::PAGE_SLUG . '&tab=' . rawurlencode( $tab ) );
 	}
 
-	public static function logs_page_slug(): string {
-		return self::PAGE_LOGS;
+	public static function settings_page_slug(): string {
+		return self::PAGE_SLUG;
 	}
 
 	public static function option_group(): string {

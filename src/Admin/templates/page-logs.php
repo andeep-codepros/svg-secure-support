@@ -46,7 +46,8 @@ $event_types = [
 
 $base_url = add_query_arg(
 	array_filter( [
-		'page'       => Admin::logs_page_slug(),
+		'page'       => Admin::settings_page_slug(),
+		'tab'        => 'logs',
 		'severity'   => $filter_severity,
 		'event_type' => $filter_event_type,
 	] ),
@@ -57,12 +58,10 @@ $base_url = add_query_arg(
 	<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
 
 	<nav class="nav-tab-wrapper wp-clearfix" style="margin-bottom:20px;">
-		<a href="<?php echo esc_url( admin_url( 'options-general.php?page=' . Admin::settings_page_slug() ) ); ?>"
-		   class="nav-tab">
+		<a href="<?php echo esc_url( Admin::tab_url( 'settings' ) ); ?>" class="nav-tab">
 			<?php esc_html_e( 'Settings', 'codepros-svg-secure-support' ); ?>
 		</a>
-		<a href="<?php echo esc_url( admin_url( 'options-general.php?page=' . Admin::logs_page_slug() ) ); ?>"
-		   class="nav-tab nav-tab-active">
+		<a href="<?php echo esc_url( Admin::tab_url( 'logs' ) ); ?>" class="nav-tab nav-tab-active">
 			<?php esc_html_e( 'Security Logs', 'codepros-svg-secure-support' ); ?>
 		</a>
 	</nav>
@@ -85,7 +84,8 @@ $base_url = add_query_arg(
 
 		<?php // Filter form ?>
 		<form method="get" action="<?php echo esc_url( admin_url( 'options-general.php' ) ); ?>">
-			<input type="hidden" name="page" value="<?php echo esc_attr( Admin::logs_page_slug() ); ?>">
+			<input type="hidden" name="page" value="<?php echo esc_attr( Admin::settings_page_slug() ); ?>">
+			<input type="hidden" name="tab" value="logs">
 
 			<select name="severity">
 				<option value=""><?php esc_html_e( 'All Severities', 'codepros-svg-secure-support' ); ?></option>
@@ -108,8 +108,7 @@ $base_url = add_query_arg(
 			<?php submit_button( __( 'Filter', 'codepros-svg-secure-support' ), 'secondary', '', false ); ?>
 
 			<?php if ( $filter_severity || $filter_event_type ) : ?>
-				<a href="<?php echo esc_url( admin_url( 'options-general.php?page=' . Admin::logs_page_slug() ) ); ?>"
-				   class="button">
+				<a href="<?php echo esc_url( Admin::tab_url( 'logs' ) ); ?>" class="button">
 					<?php esc_html_e( 'Clear', 'codepros-svg-secure-support' ); ?>
 				</a>
 			<?php endif; ?>
@@ -118,7 +117,7 @@ $base_url = add_query_arg(
 		<?php // Purge form ?>
 		<form method="post"
 		      action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"
-		      onsubmit="return confirm( <?php echo wp_json_encode( __( 'Delete log entries older than the configured retention period?', 'codepros-svg-secure-support' ) ); ?> );">
+		      onsubmit="return confirm( '<?php echo esc_js( __( 'Delete log entries older than the configured retention period?', 'codepros-svg-secure-support' ) ); ?>' );">
 			<?php wp_nonce_field( 'svgss_purge_logs' ); ?>
 			<input type="hidden" name="action" value="svgss_purge_logs">
 			<?php
@@ -186,7 +185,7 @@ $base_url = add_query_arg(
 						<?php $login = $row['user_login'] ?? ''; ?>
 						<?php if ( $login && 'guest' !== $login ) : ?>
 							<?php echo esc_html( $login ); ?>
-							<br><small style="color:#999;">ID:<?php echo (int) ( $row['user_id'] ?? 0 ); ?></small>
+							<br><small style="color:#999;">ID:<?php echo absint( $row['user_id'] ?? 0 ); ?></small>
 						<?php else : ?>
 							<em style="color:#999;"><?php esc_html_e( 'guest', 'codepros-svg-secure-support' ); ?></em>
 						<?php endif; ?>
