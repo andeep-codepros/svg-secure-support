@@ -38,6 +38,23 @@ When SVG attachment pages are served, the plugin adds:
 * `X-Content-Type-Options: nosniff`
 * `X-Frame-Options: SAMEORIGIN`
 
+= Server-Level Hardening (Optional but Recommended) =
+
+The plugin's PHP layer covers every SVG upload that passes through WordPress. But if someone accesses an uploaded file directly — e.g. by visiting `https://example.com/wp-content/uploads/2024/01/logo.svg` — WordPress is bypassed entirely, so the PHP security headers are never sent.
+
+The plugin ships two ready-to-use server configuration snippets to close that gap:
+
+* **`uploads-htaccess.txt`** — for Apache / LiteSpeed servers
+* **`uploads-nginx.conf`** — for Nginx servers
+
+Each snippet does three things:
+
+1. **Blocks server-side script execution** in `wp-content/uploads/` — if an attacker somehow uploads a `.php` file and tries to access it directly, the server returns 403 instead of executing it.
+2. **Enforces the correct SVG MIME type** (`image/svg+xml`) — some server setups serve SVGs as `text/plain`, which prevents browsers from honouring Content Security Policy rules scoped to that MIME type.
+3. **Adds security headers on direct SVG requests** — the same `X-Content-Type-Options`, `X-Frame-Options`, and `Content-Security-Policy` headers that the PHP layer adds on WordPress attachment pages, so direct file links are equally protected.
+
+Applying these snippets is the difference between WordPress-mediated access being protected and *all* access (direct URL, CDN pull, hotlink) being protected.
+
 = Admin UI =
 
 A tabbed settings page under **Settings → SVG Secure Support** provides:
@@ -101,7 +118,31 @@ The validation and sanitization pipeline runs only during file uploads, not on p
 
 = Do I need to configure Apache or Nginx separately? =
 
-It is strongly recommended. The plugin ships with a pre-written `.htaccess` snippet (`uploads-htaccess.txt`) and an Nginx config block (`uploads-nginx.conf`) that disable PHP execution in the uploads directory and set the correct SVG MIME type with security headers. These are not applied automatically — refer to the files and add the directives to your server configuration.
+It is strongly recommended. Without the server-level snippets, only requests routed through WordPress are protected. A direct URL to an uploaded SVG bypasses all PHP-layer security headers.
+
+**Apache — applying `uploads-htaccess.txt`**
+
+1. Open (or create) `wp-content/uploads/.htaccess` on your server.
+2. Copy the entire contents of `uploads-htaccess.txt` (found in the plugin directory) and append them to that file.
+3. Save. Apache picks up `.htaccess` changes immediately — no restart needed.
+4. Note: WordPress may overwrite `uploads/.htaccess` when you save Permalink settings. Re-apply the snippet after that happens, or add the directives to your main Apache `VirtualHost` block so they cannot be overwritten.
+
+Requires `mod_headers` to be enabled on your Apache installation (most managed hosts have it). The snippet also uses `mod_mime`, which is enabled by default.
+
+**Nginx — applying `uploads-nginx.conf`**
+
+1. Open your site's Nginx configuration file. On a typical Linux server this is `/etc/nginx/sites-available/<your-site>.conf`. In **Local by Flywheel** the per-site config is at `~/Local Sites/<site-name>/conf/nginx/site.conf.hbs`.
+2. Copy the two `location` blocks from `uploads-nginx.conf` and paste them inside the `server {}` block, **before** the generic `location /` block.
+3. Reload Nginx: `sudo nginx -s reload` (or restart the site from the Local app).
+
+**What changes when you apply these files**
+
+| Scenario | Without snippets | With snippets |
+|---|---|---|
+| Direct URL to uploaded `.svg` | No CSP, no `X-Frame-Options` | Full security headers applied |
+| Direct URL to uploaded `.php` disguised as SVG | PHP executes (server-dependent) | 403 Forbidden |
+| WordPress attachment page for an SVG | Protected by plugin PHP headers | Protected by both PHP and server headers |
+| SVG served via CDN pull / hotlink | No headers | Server headers applied before CDN caches the response |
 
 = What is logged? =
 
