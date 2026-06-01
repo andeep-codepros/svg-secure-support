@@ -257,20 +257,20 @@ Settings sub-page under **Settings → SVG Secure Support**. Log viewer at **Set
 
 | Option | Default | Description |
 |---|---|---|
-| `svgss_upload_capability` | `manage_options` | Minimum WP capability to upload SVGs |
-| `svgss_allowed_roles` | `['administrator']` | Roles permitted to upload |
-| `svgss_max_file_size_kb` | `1024` | Max file size (KB) |
-| `svgss_max_xml_nodes` | `5000` | Max DOM nodes |
-| `svgss_max_dimension_px` | `10000` | Max px dimension |
-| `svgss_strip_style_tags` | `1` | Strip `<style>` entirely |
-| `svgss_strip_xml_comments` | `1` | Strip XML comments |
-| `svgss_logging_enabled` | `1` | Enable logging |
-| `svgss_log_to_wp_debug` | `1` | Write to WP debug log |
-| `svgss_log_to_database` | `1` | Write to DB table |
-| `svgss_log_retention_days` | `30` | Auto-purge after N days |
-| `svgss_log_level` | `warning` | Min severity to log |
-| `svgss_csp_enabled` | `1` | Send CSP headers |
-| `svgss_csp_header` | (secure default) | Full CSP value |
+| `cpsvgss_upload_capability` | `manage_options` | Minimum WP capability to upload SVGs |
+| `cpsvgss_allowed_roles` | `['administrator']` | Roles permitted to upload |
+| `cpsvgss_max_file_size_kb` | `1024` | Max file size (KB) |
+| `cpsvgss_max_xml_nodes` | `5000` | Max DOM nodes |
+| `cpsvgss_max_dimension_px` | `10000` | Max px dimension |
+| `cpsvgss_strip_style_tags` | `1` | Strip `<style>` entirely |
+| `cpsvgss_strip_xml_comments` | `1` | Strip XML comments |
+| `cpsvgss_logging_enabled` | `1` | Enable logging |
+| `cpsvgss_log_to_wp_debug` | `1` | Write to WP debug log |
+| `cpsvgss_log_to_database` | `1` | Write to DB table |
+| `cpsvgss_log_retention_days` | `30` | Auto-purge after N days |
+| `cpsvgss_log_level` | `warning` | Min severity to log |
+| `cpsvgss_csp_enabled` | `1` | Send CSP headers |
+| `cpsvgss_csp_header` | (secure default) | Full CSP value |
 
 ---
 

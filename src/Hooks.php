@@ -37,9 +37,21 @@ class Hooks {
 
 		// Generate minimal metadata (dimensions) for SVG attachments.
 		add_filter( 'wp_generate_attachment_metadata', array( $this, 'generate_svg_metadata' ), 10, 2 );
+
+		// Daily cron: purge log rows older than the configured retention period.
+		add_action( 'cpsvgss_purge_logs_cron', array( $this, 'run_log_purge' ) );
 	}
-	
-	public static function deactivate(): void {}
+
+	public static function deactivate(): void {
+		wp_clear_scheduled_hook( 'cpsvgss_purge_logs_cron' );
+	}
+
+	public function run_log_purge(): void {
+		$days = (int) get_option( 'cpsvgss_log_retention_days', 30 );
+		if ( $days > 0 ) {
+			Database::get_instance()->purge_old_logs( $days );
+		}
+	}
 
 	/**
 	 * Add image/svg+xml to WordPress's allowed upload MIME types.
@@ -229,7 +241,7 @@ class Hooks {
 	// -------------------------------------------------------------------------
 
 	private function upload_capability(): string {
-		$cap = get_option( 'svgss_upload_capability', 'manage_options' );
+		$cap = get_option( 'cpsvgss_upload_capability', 'manage_options' );
 		return is_string( $cap ) && ! empty( $cap ) ? $cap : 'manage_options';
 	}
 

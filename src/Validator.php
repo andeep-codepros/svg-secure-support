@@ -72,7 +72,7 @@ class Validator {
 		$checks['mime'] = true;
 
 		// 3. Size check --------------------------------------------------------
-		$max_size    = (int) get_option( 'svgss_max_file_size_kb', CODEPROS_SVGSS_MAX_FILE_SIZE / 1024 ) * 1024;
+		$max_size    = (int) get_option( 'cpsvgss_max_file_size_kb', CODEPROS_SVGSS_MAX_FILE_SIZE / 1024 ) * 1024;
 		$actual_size = filesize( $tmp_path );
 
 		if ( false === $actual_size || $actual_size > $max_size ) {
@@ -100,7 +100,7 @@ class Validator {
 		$checks['parse'] = true;
 
 		// 4. Node count check --------------------------------------------------
-		$max_nodes  = (int) get_option( 'svgss_max_xml_nodes', CODEPROS_SVGSS_MAX_XML_NODES );
+		$max_nodes  = (int) get_option( 'cpsvgss_max_xml_nodes', CODEPROS_SVGSS_MAX_XML_NODES );
 		$xpath      = new \DOMXPath( $dom );
 		$node_list  = $xpath->query( 'descendant-or-self::node()' );
 		$node_count = $node_list ? $node_list->length : 0;
@@ -120,7 +120,7 @@ class Validator {
 		$checks['node_count'] = true;
 
 		// 5. Dimension check ---------------------------------------------------
-		$max_dim = (int) get_option( 'svgss_max_dimension_px', CODEPROS_SVGSS_MAX_DIMENSION );
+		$max_dim = (int) get_option( 'cpsvgss_max_dimension_px', CODEPROS_SVGSS_MAX_DIMENSION );
 		$svg_el  = $dom->documentElement;
 		$width   = $this->parse_dimension( $svg_el->getAttribute( 'width' ) );
 		$height  = $this->parse_dimension( $svg_el->getAttribute( 'height' ) );

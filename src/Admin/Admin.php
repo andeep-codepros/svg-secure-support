@@ -8,7 +8,7 @@ defined( 'ABSPATH' ) || exit;
 class Admin {
 
 	private const PAGE_SLUG    = 'codepros-svg-secure-support';
-	private const OPTION_GROUP = 'svgss_settings';
+	private const OPTION_GROUP = 'cpsvgss_settings';
 	private const DEFAULT_CSP   = "default-src 'self'; script-src 'none'; object-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:;";
 
 	/** @var self|null */
@@ -67,17 +67,17 @@ class Admin {
 	// -------------------------------------------------------------------------
 
 	public function handle_purge_logs(): void {
-		check_admin_referer( 'svgss_purge_logs' );
+		check_admin_referer( 'cpsvgss_purge_logs' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'Permission denied.', 'codepros-svg-secure-support' ) );
 		}
 
-		$days    = (int) get_option( 'svgss_log_retention_days', 30 );
+		$days    = (int) get_option( 'cpsvgss_log_retention_days', 30 );
 		$deleted = Database::get_instance()->purge_old_logs( $days );
 
 		wp_safe_redirect( add_query_arg(
-			[ 'page' => self::PAGE_SLUG, 'tab' => 'logs', 'svgss_purged' => $deleted ],
+			[ 'page' => self::PAGE_SLUG, 'tab' => 'logs', 'cpsvgss_purged' => $deleted ],
 			admin_url( 'options-general.php' )
 		) );
 		exit;
@@ -91,7 +91,7 @@ class Admin {
 
 		// --- Upload Restrictions -----------------------------------------------
 		add_settings_section(
-			'svgss_upload',
+			'cpsvgss_upload',
 			__( 'Upload Restrictions', 'codepros-svg-secure-support' ),
 			static function (): void {
 				echo '<p>' . esc_html__( 'Control who can upload SVG files and what file constraints apply.', 'codepros-svg-secure-support' ) . '</p>';
@@ -99,14 +99,14 @@ class Admin {
 			self::PAGE_SLUG
 		);
 
-		$this->field( 'svgss_upload_capability', __( 'Upload Capability', 'codepros-svg-secure-support' ), 'svgss_upload', [
+		$this->field( 'cpsvgss_upload_capability', __( 'Upload Capability', 'codepros-svg-secure-support' ), 'cpsvgss_upload', [
 			'type'        => 'text',
 			'default'     => 'manage_options',
 			'description' => __( 'WordPress capability required to upload SVG files (e.g. manage_options, upload_files).', 'codepros-svg-secure-support' ),
 			'sanitize'    => 'sanitize_text_field',
 		] );
 
-		$this->field( 'svgss_max_file_size_kb', __( 'Max File Size (KB)', 'codepros-svg-secure-support' ), 'svgss_upload', [
+		$this->field( 'cpsvgss_max_file_size_kb', __( 'Max File Size (KB)', 'codepros-svg-secure-support' ), 'cpsvgss_upload', [
 			'type'        => 'number',
 			'default'     => 1024,
 			'min'         => 1,
@@ -115,7 +115,7 @@ class Admin {
 			'sanitize'    => 'absint',
 		] );
 
-		$this->field( 'svgss_max_xml_nodes', __( 'Max XML Nodes', 'codepros-svg-secure-support' ), 'svgss_upload', [
+		$this->field( 'cpsvgss_max_xml_nodes', __( 'Max XML Nodes', 'codepros-svg-secure-support' ), 'cpsvgss_upload', [
 			'type'        => 'number',
 			'default'     => 5000,
 			'min'         => 100,
@@ -124,7 +124,7 @@ class Admin {
 			'sanitize'    => 'absint',
 		] );
 
-		$this->field( 'svgss_max_dimension_px', __( 'Max Dimension (px)', 'codepros-svg-secure-support' ), 'svgss_upload', [
+		$this->field( 'cpsvgss_max_dimension_px', __( 'Max Dimension (px)', 'codepros-svg-secure-support' ), 'cpsvgss_upload', [
 			'type'        => 'number',
 			'default'     => 10000,
 			'min'         => 100,
@@ -135,7 +135,7 @@ class Admin {
 
 		// --- Sanitization -------------------------------------------------------
 		add_settings_section(
-			'svgss_sanitization',
+			'cpsvgss_sanitization',
 			__( 'Sanitization', 'codepros-svg-secure-support' ),
 			static function (): void {
 				echo '<p>' . esc_html__( 'Additional passes applied to SVG content after the main sanitizer runs.', 'codepros-svg-secure-support' ) . '</p>';
@@ -143,7 +143,7 @@ class Admin {
 			self::PAGE_SLUG
 		);
 
-		$this->field( 'svgss_strip_style_tags', __( 'Strip &lt;style&gt; Tags', 'codepros-svg-secure-support' ), 'svgss_sanitization', [
+		$this->field( 'cpsvgss_strip_style_tags', __( 'Strip &lt;style&gt; Tags', 'codepros-svg-secure-support' ), 'cpsvgss_sanitization', [
 			'type'        => 'checkbox',
 			'default'     => 1,
 			'label'       => __( 'Remove all <style> blocks from SVG files', 'codepros-svg-secure-support' ),
@@ -151,7 +151,7 @@ class Admin {
 			'sanitize'    => static fn( $v ) => $v ? 1 : 0,
 		] );
 
-		$this->field( 'svgss_strip_xml_comments', __( 'Strip XML Comments', 'codepros-svg-secure-support' ), 'svgss_sanitization', [
+		$this->field( 'cpsvgss_strip_xml_comments', __( 'Strip XML Comments', 'codepros-svg-secure-support' ), 'cpsvgss_sanitization', [
 			'type'        => 'checkbox',
 			'default'     => 1,
 			'label'       => __( 'Remove all <!-- XML comments --> from SVG files', 'codepros-svg-secure-support' ),
@@ -161,7 +161,7 @@ class Admin {
 
 		// --- Security Headers ---------------------------------------------------
 		add_settings_section(
-			'svgss_headers',
+			'cpsvgss_headers',
 			__( 'Security Headers', 'codepros-svg-secure-support' ),
 			static function (): void {
 				echo '<p>' . esc_html__( 'HTTP headers sent when SVG attachment pages are served by WordPress.', 'codepros-svg-secure-support' ) . '</p>';
@@ -169,14 +169,14 @@ class Admin {
 			self::PAGE_SLUG
 		);
 
-		$this->field( 'svgss_csp_enabled', __( 'Enable CSP Header', 'codepros-svg-secure-support' ), 'svgss_headers', [
+		$this->field( 'cpsvgss_csp_enabled', __( 'Enable CSP Header', 'codepros-svg-secure-support' ), 'cpsvgss_headers', [
 			'type'    => 'checkbox',
 			'default' => 1,
 			'label'   => __( 'Send Content-Security-Policy on SVG attachment pages', 'codepros-svg-secure-support' ),
 			'sanitize' => static fn( $v ) => $v ? 1 : 0,
 		] );
 
-		$this->field( 'svgss_csp_header', __( 'CSP Header Value', 'codepros-svg-secure-support' ), 'svgss_headers', [
+		$this->field( 'cpsvgss_csp_header', __( 'CSP Header Value', 'codepros-svg-secure-support' ), 'cpsvgss_headers', [
 			'type'        => 'textarea',
 			'default'     => self::DEFAULT_CSP,
 			'description' => __( 'Full Content-Security-Policy directive string. Leave blank to restore the secure default.', 'codepros-svg-secure-support' ),
@@ -188,7 +188,7 @@ class Admin {
 
 		// --- Logging ------------------------------------------------------------
 		add_settings_section(
-			'svgss_logging',
+			'cpsvgss_logging',
 			__( 'Security Logging', 'codepros-svg-secure-support' ),
 			static function (): void {
 				echo '<p>' . esc_html__( 'Configure how and where security events are recorded.', 'codepros-svg-secure-support' ) . '</p>';
@@ -196,28 +196,28 @@ class Admin {
 			self::PAGE_SLUG
 		);
 
-		$this->field( 'svgss_logging_enabled', __( 'Enable Logging', 'codepros-svg-secure-support' ), 'svgss_logging', [
+		$this->field( 'cpsvgss_logging_enabled', __( 'Enable Logging', 'codepros-svg-secure-support' ), 'cpsvgss_logging', [
 			'type'    => 'checkbox',
 			'default' => 1,
 			'label'   => __( 'Record security events', 'codepros-svg-secure-support' ),
 			'sanitize' => static fn( $v ) => $v ? 1 : 0,
 		] );
 
-		$this->field( 'svgss_log_to_wp_debug', __( 'Log to WP Debug', 'codepros-svg-secure-support' ), 'svgss_logging', [
+		$this->field( 'cpsvgss_log_to_wp_debug', __( 'Log to WP Debug', 'codepros-svg-secure-support' ), 'cpsvgss_logging', [
 			'type'    => 'checkbox',
 			'default' => 1,
 			'label'   => __( 'Write entries to wp-content/debug.log', 'codepros-svg-secure-support' ),
 			'sanitize' => static fn( $v ) => $v ? 1 : 0,
 		] );
 
-		$this->field( 'svgss_log_to_database', __( 'Log to Database', 'codepros-svg-secure-support' ), 'svgss_logging', [
+		$this->field( 'cpsvgss_log_to_database', __( 'Log to Database', 'codepros-svg-secure-support' ), 'cpsvgss_logging', [
 			'type'    => 'checkbox',
 			'default' => 1,
 			'label'   => __( 'Write entries to the svgss_security_log database table', 'codepros-svg-secure-support' ),
 			'sanitize' => static fn( $v ) => $v ? 1 : 0,
 		] );
 
-		$this->field( 'svgss_log_level', __( 'Minimum Log Level', 'codepros-svg-secure-support' ), 'svgss_logging', [
+		$this->field( 'cpsvgss_log_level', __( 'Minimum Log Level', 'codepros-svg-secure-support' ), 'cpsvgss_logging', [
 			'type'    => 'select',
 			'default' => 'warning',
 			'options' => [
@@ -228,7 +228,7 @@ class Admin {
 			'sanitize' => static fn( $v ) => in_array( $v, [ 'info', 'warning', 'critical' ], true ) ? $v : 'warning',
 		] );
 
-		$this->field( 'svgss_log_retention_days', __( 'Log Retention (days)', 'codepros-svg-secure-support' ), 'svgss_logging', [
+		$this->field( 'cpsvgss_log_retention_days', __( 'Log Retention (days)', 'codepros-svg-secure-support' ), 'cpsvgss_logging', [
 			'type'        => 'number',
 			'default'     => 30,
 			'min'         => 1,

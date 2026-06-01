@@ -45,11 +45,11 @@ class Headers {
 			return;
 		}
 
-		if ( ! get_option( 'svgss_csp_enabled', 1 ) ) {
+		if ( ! get_option( 'cpsvgss_csp_enabled', 1 ) ) {
 			return;
 		}
 
-		$csp = (string) get_option( 'svgss_csp_header', self::DEFAULT_CSP );
+		$csp = (string) get_option( 'cpsvgss_csp_header', self::DEFAULT_CSP );
 
 		if ( ! empty( $csp ) ) {
 			header( 'Content-Security-Policy: ' . $csp );

@@ -45,12 +45,12 @@ class Logger {
 			$ip
 		);
 
-		if ( get_option( 'svgss_log_to_wp_debug', 1 ) ) {
+		if ( get_option( 'cpsvgss_log_to_wp_debug', 1 ) ) {
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			error_log( $message );
 		}
 
-		if ( get_option( 'svgss_log_to_database', 1 ) ) {
+		if ( get_option( 'cpsvgss_log_to_database', 1 ) ) {
 			Database::get_instance()->insert_log( [
 				'event_type' => $event_type,
 				'severity'   => $severity,
@@ -129,11 +129,11 @@ class Logger {
 	// -------------------------------------------------------------------------
 
 	private function is_enabled(): bool {
-		return (bool) get_option( 'svgss_logging_enabled', 1 );
+		return (bool) get_option( 'cpsvgss_logging_enabled', 1 );
 	}
 
 	private function meets_level( string $severity ): bool {
-		$min_key   = (string) get_option( 'svgss_log_level', 'warning' );
+		$min_key   = (string) get_option( 'cpsvgss_log_level', 'warning' );
 		$min_level = self::SEVERITY_LEVELS[ $min_key ] ?? 1;
 		$level     = self::SEVERITY_LEVELS[ $severity ] ?? 0;
 		return $level >= $min_level;

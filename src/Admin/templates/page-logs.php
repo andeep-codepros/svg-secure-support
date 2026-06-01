@@ -11,7 +11,7 @@ use CodePros\SVGSecureSupport\Admin\Admin;
 use CodePros\SVGSecureSupport\Database;
 
 // Purge notice.
-$purged = isset( $_GET['svgss_purged'] ) ? (int) $_GET['svgss_purged'] : -1; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+$purged = isset( $_GET['cpsvgss_purged'] ) ? (int) $_GET['cpsvgss_purged'] : -1; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
 // Active filters.
 $filter_severity   = isset( $_GET['severity'] )   ? sanitize_text_field( wp_unslash( $_GET['severity'] ) )   : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -118,14 +118,14 @@ $base_url = add_query_arg(
 		<form method="post"
 		      action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"
 		      onsubmit="return confirm( '<?php echo esc_js( __( 'Delete log entries older than the configured retention period?', 'codepros-svg-secure-support' ) ); ?>' );">
-			<?php wp_nonce_field( 'svgss_purge_logs' ); ?>
+			<?php wp_nonce_field( 'cpsvgss_purge_logs' ); ?>
 			<input type="hidden" name="action" value="svgss_purge_logs">
 			<?php
 			submit_button(
 				sprintf(
 					/* translators: %d: retention days */
 					__( 'Purge Entries Older Than %d Days', 'codepros-svg-secure-support' ),
-					(int) get_option( 'svgss_log_retention_days', 30 )
+					(int) get_option( 'cpsvgss_log_retention_days', 30 )
 				),
 				'delete',
 				'',

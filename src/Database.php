@@ -24,7 +24,7 @@ class Database {
 	public static function install(): void {
 		global $wpdb;
 
-		$table      = $wpdb->prefix . 'svgss_security_log';
+		$table      = $wpdb->prefix . 'cpsvgss_security_log';
 		$charset_db = $wpdb->get_charset_collate();
 
 		$sql = "CREATE TABLE {$table} (
@@ -45,6 +45,10 @@ class Database {
 
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 		dbDelta( $sql );
+
+		if ( ! wp_next_scheduled( 'cpsvgss_purge_logs_cron' ) ) {
+			wp_schedule_event( time(), 'daily', 'cpsvgss_purge_logs_cron' );
+		}
 	}
 
 	/**
@@ -64,7 +68,7 @@ class Database {
 		global $wpdb;
 
 		$result = $wpdb->insert(
-			$wpdb->prefix . 'svgss_security_log',
+			$wpdb->prefix . 'cpsvgss_security_log',
 			[
 				'event_type' => $data['event_type'],
 				'severity'   => $data['severity'],
@@ -90,7 +94,7 @@ class Database {
 	public function get_logs( array $filters = [], int $per_page = 20, int $page = 1 ): array {
 		global $wpdb;
 
-		$table   = $wpdb->prefix . 'svgss_security_log';
+		$table   = $wpdb->prefix . 'cpsvgss_security_log';
 		$clauses = [];
 		$params  = [];
 

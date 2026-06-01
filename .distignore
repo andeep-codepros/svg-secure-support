@@ -1,0 +1,20 @@
+# Files excluded from the WordPress.org distribution zip.
+# Used by wp dist-zip and similar build tools.
+# vendor/ is intentionally NOT listed here — it must be present in the
+# distribution because WordPress.org users cannot run composer install.
+
+# AI / development documentation
+CLAUDE.md
+PLAN.md
+
+
+# GitHub-oriented markdown (readme.txt serves the wp.org listing)
+README.md
+
+# VCS and build tooling
+.gitignore
+.distignore
+composer.json
+composer.lock
+.claude
+.git
