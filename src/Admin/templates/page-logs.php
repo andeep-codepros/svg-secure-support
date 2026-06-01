@@ -73,7 +73,7 @@ $base_url = add_query_arg(
 				printf(
 					/* translators: %d: number of log entries deleted */
 					esc_html__( 'Purged %d log entries.', 'codepros-svg-secure-support' ),
-					$purged
+					absint( $purged )
 				);
 				?>
 			</p>
@@ -141,7 +141,7 @@ $base_url = add_query_arg(
 		printf(
 			/* translators: %d: total log entries */
 			esc_html__( '%d total entries', 'codepros-svg-secure-support' ),
-			$total
+			absint( $total )
 		);
 		?>
 	</p>
@@ -205,8 +205,8 @@ $base_url = add_query_arg(
 					printf(
 						/* translators: 1: current page, 2: total pages */
 						esc_html__( 'Page %1$d of %2$d', 'codepros-svg-secure-support' ),
-						$current_page,
-						$page_count
+						absint( $current_page ),
+						absint( $page_count )
 					);
 					?>
 				</span>

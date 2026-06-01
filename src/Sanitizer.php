@@ -44,6 +44,13 @@ class Sanitizer {
 			);
 		}
 
+		// Strip XML comments if the option is enabled (default on).
+		// Comments are never needed for rendering and can conceal payloads from
+		// regex scanners (e.g. <!-- <script>alert(1)</script> -->).
+		if ( get_option( 'svgss_strip_xml_comments', 1 ) ) {
+			$clean = (string) preg_replace( '/<!--.*?-->/s', '', $clean );
+		}
+
 		// Final string-level safety net — catches anything that survived DOM traversal.
 		$suspicious = $this->scan_for_payloads( $clean );
 		if ( ! empty( $suspicious ) ) {

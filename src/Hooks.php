@@ -52,8 +52,11 @@ class Hooks {
 	 */
 	public function allow_svg_mime( array $mimes ): array {
 		if ( current_user_can( $this->upload_capability() ) ) {
-			$mimes['svg']  = 'image/svg+xml';
-			$mimes['svgz'] = 'image/svg+xml';
+			$mimes['svg'] = 'image/svg+xml';
+			// svgz (gzip-compressed SVG) is intentionally excluded: the sanitization
+			// pipeline operates on plain XML bytes and cannot safely inspect compressed
+			// content without a full decompress/recompress cycle that creates its own
+			// attack surface. Plain SVG covers all practical use cases.
 		}
 		return $mimes;
 	}
