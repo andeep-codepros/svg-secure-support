@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name:       CodePros SVG Secure Support
- * Plugin URI:        https://codepros.ai/codepros-svg-secure-support
+ * Plugin URI:        https://wordpress.org/plugins/codepros-svg-secure-support/
  * Description:       Highly secure SVG upload support for WordPress. Validates, sanitizes, and optionally rasterizes SVG files through a multi-layer security pipeline.
  * Version:           1.0.0
  * Requires at least: 6.0
@@ -55,12 +55,6 @@ register_deactivation_hook( __FILE__, array( CodePros\SVGSecureSupport\Hooks::cl
 add_action(
 	'plugins_loaded',
 	static function () {
-		load_plugin_textdomain(
-			'codepros-svg-secure-support',
-			false,
-			dirname( plugin_basename( CODEPROS_SVGSS_PLUGIN_FILE ) ) . '/languages'
-		);
-
 		CodePros\SVGSecureSupport\Hooks::get_instance()->init();
 		CodePros\SVGSecureSupport\Headers::get_instance()->init();
 		CodePros\SVGSecureSupport\Admin\Admin::get_instance()->init();
