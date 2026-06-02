@@ -261,12 +261,6 @@ class Hooks {
 			return $fallback;
 		}
 
-		// Disable external entity loading before any XML parse.
-		if ( PHP_VERSION_ID < 80000 ) {
-			// phpcs:ignore PHPCompatibility.FunctionUse.RemovedFunctions.libxml_disable_entity_loaderDeprecated
-			libxml_disable_entity_loader( true );
-		}
-
 		$xml = simplexml_load_file( $file, 'SimpleXMLElement', LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING );
 
 		if ( false === $xml ) {

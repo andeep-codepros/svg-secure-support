@@ -158,11 +158,7 @@ class Validator {
 	 * Disables external entity loading and suppresses parse errors.
 	 */
 	private function safe_load_xml( string $path ): ?\DOMDocument {
-		if ( PHP_VERSION_ID < 80000 ) {
-			// phpcs:ignore PHPCompatibility.FunctionUse.RemovedFunctions.libxml_disable_entity_loaderDeprecated
-			libxml_disable_entity_loader( true );
-		}
-
+		
 		$prev = libxml_use_internal_errors( true );
 
 		$dom                    = new \DOMDocument();
