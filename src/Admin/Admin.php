@@ -55,10 +55,10 @@ class Admin {
 		$tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'settings';
 		switch ( $tab ) {
 			case 'logs':
-				require CODEPROS_SVGSS_PLUGIN_DIR . 'src/Admin/templates/page-logs.php';
+				require CPSVGSS_PLUGIN_DIR . 'src/Admin/templates/page-logs.php';
 				break;
 			default:
-				require CODEPROS_SVGSS_PLUGIN_DIR . 'src/Admin/templates/page-settings.php';
+				require CPSVGSS_PLUGIN_DIR . 'src/Admin/templates/page-settings.php';
 		}
 	}
 
@@ -258,8 +258,8 @@ class Admin {
 	 */
 	private function field( string $option, string $label, string $section, array $args ): void {
 		register_setting( self::OPTION_GROUP, $option, [
-			'type'              => $args['type'] ?? 'string',
-			'sanitize_callback' => $args['sanitize'] ?? 'sanitize_text_field',
+			'type'              => 'string',
+			'sanitize_callback' => 'sanitize_text_field',
 		] );
 
 		add_settings_field(

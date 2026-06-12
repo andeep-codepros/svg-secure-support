@@ -71,13 +71,13 @@ Bootstrap loads the autoloader: `require_once SVGSS_PLUGIN_DIR . 'vendor/autoloa
 ## Constants (defined in `svg-secure-support.php`)
 
 ```
-CODEPROS_SVGSS_VERSION         = '1.0.0'
-CODEPROS_SVGSS_PLUGIN_DIR      = plugin_dir_path(__FILE__)
-CODEPROS_SVGSS_PLUGIN_URL      = plugin_dir_url(__FILE__)
-CODEPROS_SVGSS_PLUGIN_FILE     = __FILE__
-CODEPROS_SVGSS_MAX_FILE_SIZE   = 1048576   (1 MB)
-CODEPROS_SVGSS_MAX_XML_NODES   = 5000
-CODEPROS_SVGSS_MAX_DIMENSION   = 10000
+CPSVGSS_VERSION         = '1.0.0'
+CPSVGSS_PLUGIN_DIR      = plugin_dir_path(__FILE__)
+CPSVGSS_PLUGIN_URL      = plugin_dir_url(__FILE__)
+CPSVGSS_PLUGIN_FILE     = __FILE__
+CPSVGSS_MAX_FILE_SIZE   = 1048576   (1 MB)
+CPSVGSS_MAX_XML_NODES   = 5000
+CPSVGSS_MAX_DIMENSION   = 10000
 ```
 
 ---

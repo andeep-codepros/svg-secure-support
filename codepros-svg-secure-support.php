@@ -7,8 +7,7 @@
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Tested up to:      7.0
- * Author:            CodePros
- * Author URI:        https://codepros.ai
+ * Author:            Code Pros
  * License:           GPL v2 or later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       codepros-svg-secure-support
@@ -19,16 +18,16 @@
 defined( 'ABSPATH' ) || exit;
 
 // Plugin constants.
-define( 'CODEPROS_SVGSS_VERSION',       '1.0.0' );
-define( 'CODEPROS_SVGSS_PLUGIN_DIR',    plugin_dir_path( __FILE__ ) );
-define( 'CODEPROS_SVGSS_PLUGIN_URL',    plugin_dir_url( __FILE__ ) );
-define( 'CODEPROS_SVGSS_PLUGIN_FILE',   __FILE__ );
-define( 'CODEPROS_SVGSS_MAX_FILE_SIZE', 1048576 );  // 1 MB in bytes.
-define( 'CODEPROS_SVGSS_MAX_XML_NODES', 5000 );
-define( 'CODEPROS_SVGSS_MAX_DIMENSION', 10000 );
+define( 'CPSVGSS_VERSION',       '1.0.0' );
+define( 'CPSVGSS_PLUGIN_DIR',    plugin_dir_path( __FILE__ ) );
+define( 'CPSVGSS_PLUGIN_URL',    plugin_dir_url( __FILE__ ) );
+define( 'CPSVGSS_PLUGIN_FILE',   __FILE__ );
+define( 'CPSVGSS_MAX_FILE_SIZE', 1048576 );  // 1 MB in bytes.
+define( 'CPSVGSS_MAX_XML_NODES', 5000 );
+define( 'CPSVGSS_MAX_DIMENSION', 10000 );
 
 // Composer autoloader.
-$svgss_autoloader = CODEPROS_SVGSS_PLUGIN_DIR . 'vendor/autoload.php';
+$svgss_autoloader = CPSVGSS_PLUGIN_DIR . 'vendor/autoload.php';
 
 if ( ! file_exists( $svgss_autoloader ) ) {
 	add_action(

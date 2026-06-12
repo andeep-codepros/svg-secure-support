@@ -31,7 +31,7 @@ There is no build step, test runner, or linter configured in this project. WordP
 
 ### Bootstrap flow (`svg-secure-support.php`)
 
-1. Defines constants (`CODEPROS_SVGSS_*`) and loads `vendor/autoload.php`.
+1. Defines constants (`CPSVGSS_*`) and loads `vendor/autoload.php`.
 2. `register_activation_hook` → `Database::install()` creates the log table via `dbDelta()`.
 3. `plugins_loaded` action → instantiates and calls `init()` on `Hooks`, `Headers`, and `Admin\Admin`.
 
@@ -69,7 +69,7 @@ The plugin is being built in 6 phases (see `PLAN.md`). Currently **Phase 1** is 
 ## Conventions
 
 - **Option prefix:** `svgss_`
-- **Constant prefix:** `CODEPROS_SVGSS_`
+- **Constant prefix:** `CPSVGSS_`
 - **Table name:** `{prefix}svgss_security_log`
 - **Text domain:** `codepros-svg-secure-support`
 - Settings page slug: `codepros-svg-secure-support`
