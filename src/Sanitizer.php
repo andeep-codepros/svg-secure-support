@@ -87,6 +87,7 @@ class Sanitizer {
 			'/<' . 'script[\s>\/]/i'   => 'script element',
 			'/on\w+\s*=/i'             => 'event handler attribute',
 			'/expression\s*\(/i'       => 'CSS expression()',
+			'/data:\s*image\/svg/i'    => 'embedded SVG data URI in image tag',
 		];
 
 		foreach ( $patterns as $pattern => $label ) {
