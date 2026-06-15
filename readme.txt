@@ -59,12 +59,12 @@ Applying these snippets is the difference between WordPress-mediated access bein
 
 A tabbed settings page under **Settings → SVG Secure Support** provides:
 
-* **Settings tab** — Configure upload capability, file size/node/dimension limits, sanitization options, CSP header value, and logging preferences.
+* **Settings tab** — Configure allowed upload roles, file size/node/dimension limits, sanitization options, CSP header value, and logging preferences.
 * **Security Logs tab** — Paginated, filterable log viewer showing every security event (blocked upload, removed tag/attribute, suspicious payload). Includes a log purge action.
 
 = Key Features =
 
-* Capability-gated uploads — restrict SVG uploads to any WordPress capability (default: `manage_options`)
+* Role-based upload access — select one or more WordPress roles (default: Administrator) whose members may upload SVG files
 * Automatic upload-time sanitization — clean SVG replaces the original tmp file before WordPress moves it
 * Security event logging to the WordPress debug log and a dedicated database table
 * Configurable log retention with one-click purge
@@ -96,7 +96,7 @@ After activation, simply upload `.svg` files through the standard WordPress Medi
 
 = Who can upload SVG files after activation? =
 
-By default, only users with the `manage_options` capability (Administrators). You can change this to any WordPress capability — for example `upload_files` to allow Editors and Authors — under **Settings → SVG Secure Support → Upload Capability**.
+By default, only Administrators. You can grant access to one or more additional roles (Editor, Author, Contributor, Subscriber, or any custom role) under **Settings → SVG Secure Support → Roles Allowed to Upload SVGs**. If no roles are selected, only Administrators can upload. All role checks are performed at upload time.
 
 = Does this plugin make SVG uploads completely safe? =
 
@@ -172,10 +172,10 @@ The plugin has not been tested on WordPress Multisite. Network-wide activation i
 
 = 1.0.0 =
 * Initial release.
-* Upload capability gate with configurable capability requirement.
+* Role-based upload access with multi-role selection; Administrators allowed by default.
 * Five-check SVG validation pipeline (extension, MIME, size, node count, dimensions).
 * DOM sanitization via enshrined/svg-sanitize with custom tag/attribute whitelists.
-* String-level XSS payload scan as a final defense layer.
+* XML comment stripping and enhanced string-level XSS payload scan as a final defense layer.
 * Security event logging to WP debug log and database table.
 * CSP, X-Content-Type-Options, and X-Frame-Options headers on SVG attachment pages.
 * Tabbed admin UI with settings and security log viewer.
