@@ -258,8 +258,8 @@ class Admin {
 	 */
 	private function field( string $option, string $label, string $section, array $args ): void {
 		register_setting( self::OPTION_GROUP, $option, [
-			'type'              => 'string',
-			'sanitize_callback' => 'sanitize_text_field',
+			'type'              =>  $args['type'] ?? 'string',
+			'sanitize_callback' => $args['sanitize'] ??	 'sanitize_text_field',
 		] );
 
 		add_settings_field(
