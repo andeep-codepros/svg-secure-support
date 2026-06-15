@@ -99,11 +99,23 @@ class Admin {
 			self::PAGE_SLUG
 		);
 
-		$this->field( 'cpsvgss_upload_capability', __( 'Upload Capability', 'codepros-svg-secure-support' ), 'cpsvgss_upload', [
-			'type'        => 'text',
-			'default'     => 'manage_options',
-			'description' => __( 'WordPress capability required to upload SVG files (e.g. manage_options, upload_files).', 'codepros-svg-secure-support' ),
-			'sanitize'    => 'sanitize_text_field',
+		$roles = [];
+		foreach ( wp_roles()->roles as $role_slug => $role_data ) {
+			$roles[ $role_slug ] = translate_user_role( $role_data['name'] );
+		}
+
+		$this->field( 'cpsvgss_allowed_roles', __( 'Roles Allowed to Upload SVGs', 'codepros-svg-secure-support' ), 'cpsvgss_upload', [
+			'type'        => 'multicheck',
+			'default'     => [ 'administrator' ],
+			'options'     => $roles,
+			'description' => __( 'Select one or more roles whose members may upload SVG files. If none are selected, only administrators can upload.', 'codepros-svg-secure-support' ),
+			'sanitize'    => static function ( $v ) use ( $roles ): array {
+				if ( ! is_array( $v ) ) {
+					return [ 'administrator' ];
+				}
+				$valid = array_values( array_filter( $v, static fn( $r ) => array_key_exists( $r, $roles ) ) );
+				return $valid ?: [ 'administrator' ];
+			},
 		] );
 
 		$this->field( 'cpsvgss_max_file_size_kb', __( 'Max File Size (KB)', 'codepros-svg-secure-support' ), 'cpsvgss_upload', [
@@ -258,8 +270,8 @@ class Admin {
 	 */
 	private function field( string $option, string $label, string $section, array $args ): void {
 		register_setting( self::OPTION_GROUP, $option, [
-			'type'              =>  $args['type'] ?? 'string',
-			'sanitize_callback' => $args['sanitize'] ??	 'sanitize_text_field',
+			'type'              => 'multicheck' === ( $args['type'] ?? '' ) ? 'array' : ( $args['type'] ?? 'string' ),
+			'sanitize_callback' => $args['sanitize'] ?? 'sanitize_text_field',
 		] );
 
 		add_settings_field(
@@ -283,6 +295,19 @@ class Admin {
 		$value  = get_option( $option, $args['default'] ?? '' );
 
 		switch ( $type ) {
+			case 'multicheck':
+				$saved = (array) get_option( $option, $args['default'] ?? [] );
+				foreach ( $args['options'] ?? [] as $opt_val => $opt_label ) {
+					printf(
+						'<label style="display:block;margin-bottom:5px;"><input type="checkbox" name="%1$s[]" value="%2$s"%3$s> %4$s</label>',
+						esc_attr( $option ),
+						esc_attr( $opt_val ),
+						in_array( $opt_val, $saved, true ) ? ' checked' : '',
+						esc_html( $opt_label )
+					);
+				}
+				break;
+
 			case 'checkbox':
 				printf(
 					'<label for="%1$s"><input type="checkbox" id="%1$s" name="%1$s" value="1"%2$s> %3$s</label>',

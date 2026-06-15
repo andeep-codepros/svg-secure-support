@@ -63,7 +63,7 @@ class Hooks {
 	 * @return array<string,string>
 	 */
 	public function allow_svg_mime( array $mimes ): array {
-		if ( current_user_can( $this->upload_capability() ) ) {
+		if ( $this->user_can_upload_svg() ) {
 			$mimes['svg'] = 'image/svg+xml';
 			// svgz (gzip-compressed SVG) is intentionally excluded: the sanitization
 			// pipeline operates on plain XML bytes and cannot safely inspect compressed
@@ -110,7 +110,7 @@ class Hooks {
 			return $file;
 		}
 
-		if ( ! current_user_can( $this->upload_capability() ) ) {
+		if ( ! $this->user_can_upload_svg() ) {
 			$file['error'] = esc_html__(
 				'You do not have permission to upload SVG files.',
 				'codepros-svg-secure-support'
@@ -240,9 +240,16 @@ class Hooks {
 	// Private helpers
 	// -------------------------------------------------------------------------
 
-	private function upload_capability(): string {
-		$cap = get_option( 'cpsvgss_upload_capability', 'manage_options' );
-		return is_string( $cap ) && ! empty( $cap ) ? $cap : 'manage_options';
+	private function user_can_upload_svg(): bool {
+		$user = wp_get_current_user();
+		if ( ! $user->exists() ) {
+			return false;
+		}
+		$allowed = (array) get_option( 'cpsvgss_allowed_roles', [ 'administrator' ] );
+		if ( empty( $allowed ) ) {
+			$allowed = [ 'administrator' ];
+		}
+		return (bool) array_intersect( $allowed, (array) $user->roles );
 	}
 
 	/**
