@@ -8,15 +8,19 @@ defined( 'ABSPATH' ) || exit;
 class AllowedTags implements TagInterface {
 
 	/**
-	 * Safe SVG tag whitelist.
+	 * SVG tag whitelist (permissive mode).
 	 *
-	 * Excluded (never safe): script, iframe, object, embed, foreignObject,
-	 * a, style, link, meta, base, form — all XSS / resource-load vectors.
+	 * Always excluded: script, iframe, object, embed, a, style, link, meta,
+	 * base, form — direct XSS or resource-load vectors with no safe use in SVG.
 	 *
-	 * image: safe because removeRemoteReferences(true) strips external href values
-	 * and scan_for_payloads() blocks embedded SVG data URIs.
-	 * filter / fe* tags: safe — pixel-manipulation only, no code execution surface.
-	 * animation tags: safe — motion/transform only, no script execution.
+	 * foreignObject: allowed in permissive mode. Any HTML content inside it is
+	 * stripped by the whitelist (non-SVG tags are not listed here), and the
+	 * Sanitizer's post-scan backstop blocks surviving HTML injection patterns.
+	 *
+	 * image / feImage: safe — removeRemoteReferences(true) strips external hrefs;
+	 * scan_for_payloads() blocks embedded SVG data URIs.
+	 * filter / fe*: pixel manipulation only, no code execution surface.
+	 * animate / set: attribute / value animation with no script execution path.
 	 *
 	 * @return array<string>
 	 */
@@ -24,6 +28,10 @@ class AllowedTags implements TagInterface {
 		return [
 			// Core structure
 			'svg', 'g', 'defs', 'symbol', 'use', 'switch',
+
+			// Embedded foreign content (permissive — HTML content stripped by whitelist;
+			// surviving injection vectors caught by scan_for_payloads backstop)
+			'foreignObject',
 
 			// Shapes
 			'path', 'rect', 'circle', 'ellipse', 'line', 'polyline', 'polygon',
@@ -47,12 +55,12 @@ class AllowedTags implements TagInterface {
 			'feConvolveMatrix', 'feDiffuseLighting', 'feDisplacementMap',
 			'feDistantLight', 'feFlood',
 			'feFuncA', 'feFuncB', 'feFuncG', 'feFuncR',
-			'feGaussianBlur', 'feMerge', 'feMergeNode', 'feMorphology',
+			'feGaussianBlur', 'feImage', 'feMerge', 'feMergeNode', 'feMorphology',
 			'feOffset', 'fePointLight', 'feSpecularLighting', 'feSpotLight',
 			'feTile', 'feTurbulence',
 
-			// Animation (transform/motion only — no script surface)
-			'animateMotion', 'animateTransform', 'mpath',
+			// Animation (motion, transform, attribute value, value-set — no script surface)
+			'animate', 'animateMotion', 'animateTransform', 'set', 'mpath',
 
 			// Typography (legacy SVG fonts — rendering only)
 			'font', 'glyph', 'glyphRef', 'hkern', 'vkern',

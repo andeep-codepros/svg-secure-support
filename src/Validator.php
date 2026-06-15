@@ -88,6 +88,26 @@ class Validator {
 		}
 		$checks['size'] = true;
 
+		// 3b. Raw-content security pre-scan -----------------------------------
+		// Runs BEFORE libxml parses the file so malformed or obfuscated XML
+		// cannot trick the parser into ignoring these markers.
+		// File is already known to be within size limits, so reading it is safe.
+		$raw_content = file_get_contents( $tmp_path );
+		$prescan     = ( false !== $raw_content ) ? $this->prescan_raw_content( $raw_content ) : [];
+
+		if ( ! empty( $prescan ) ) {
+			$checks['malware_prescan'] = false;
+			return $this->fail(
+				sprintf(
+					/* translators: %s: comma-separated list of detected threats */
+					__( 'SVG file was rejected — dangerous content detected: %s.', 'codepros-svg-secure-support' ),
+					implode( ', ', $prescan )
+				),
+				$checks
+			);
+		}
+		$checks['malware_prescan'] = true;
+
 		// Parse the XML once for checks 4 and 5 --------------------------------
 		$dom = $this->safe_load_xml( $tmp_path );
 		if ( null === $dom ) {
@@ -151,6 +171,51 @@ class Validator {
 		$checks['dimensions'] = true;
 
 		return [ 'valid' => true, 'error' => '', 'checks' => $checks ];
+	}
+
+	/**
+	 * Scan raw SVG bytes for absolute red-flag patterns before XML parsing.
+	 *
+	 * Catches XXE markers (DOCTYPE / ENTITY), null bytes, and polyglot patterns.
+	 * Returning any threat labels causes the upload to be rejected before libxml
+	 * ever processes the content, which prevents Billion-Laughs DoS and XXE reads.
+	 *
+	 * @return array<string> Threat labels found (empty = clean).
+	 */
+	private function prescan_raw_content( string $content ): array {
+		$found = [];
+
+		// Null bytes are used to truncate strings in some PHP/C parser contexts.
+		if ( false !== strpos( $content, "\x00" ) ) {
+			$found[] = 'null byte injection';
+		}
+
+		// DOCTYPE with an internal subset ([...]) is the gateway to entity expansion
+		// (Billion-Laughs DoS) and inline ENTITY declarations.
+		// PUBLIC/SYSTEM-only DOCTYPE lines (e.g. the standard W3C SVG 1.1 DTD
+		// reference) are harmless — libxml with LIBXML_NONET never fetches them.
+		if ( preg_match( '/<!DOCTYPE[^>]*\[/i', $content ) ) {
+			$found[] = 'DOCTYPE internal subset (entity-expansion / XXE vector)';
+		}
+
+		// SYSTEM keyword with a non-HTTP URI = local file read or internal SSRF.
+		// SYSTEM pointing to http(s) is blocked by LIBXML_NONET; file/ftp/dict/etc. are not.
+		if ( preg_match( '/SYSTEM\s+["\'](?!https?:\/\/)/i', $content ) ) {
+			$found[] = 'DOCTYPE SYSTEM URI (potential local file read / SSRF)';
+		}
+
+		// Inline ENTITY declarations can define recursive expansions (DoS) or
+		// reference external files/URLs (SSRF / local file read).
+		if ( preg_match( '/<!ENTITY[\s%]/i', $content ) ) {
+			$found[] = 'ENTITY declaration (XXE vector)';
+		}
+
+		// PHP open tags signal a polyglot file crafted to execute as PHP.
+		if ( preg_match( '/<\?php\b/i', $content ) ) {
+			$found[] = 'PHP code block (polyglot file)';
+		}
+
+		return $found;
 	}
 
 	/**

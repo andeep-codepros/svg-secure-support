@@ -74,20 +74,41 @@ class Sanitizer {
 	}
 
 	/**
-	 * Scan sanitized SVG content for known XSS payload patterns.
-	 * These run after library sanitization as a defense-in-depth backstop.
+	 * Scan sanitized SVG content for known XSS / injection payload patterns.
+	 *
+	 * Runs after the DOM-level sanitizer as a defense-in-depth backstop. Any
+	 * match here means something survived the whitelist pass — the file is
+	 * rejected and logged as a critical event.
+	 *
+	 * The '<' . 'script' split prevents automated security scanners from
+	 * flagging this source file itself as containing a script injection.
 	 */
 	private function scan_for_payloads( string $content ): array {
 		$found = [];
 
-		// Patterns intentionally avoid literal '<script' to prevent false positives in automated scanners.
-		// The regex below detects '<script' followed by whitespace, '>', or '/' in SVG content.
 		$patterns = [
-			'/javascript\s*:/i'        => 'javascript: URI',
-			'/<' . 'script[\s>\/]/i'   => 'script element',
-			'/on\w+\s*=/i'             => 'event handler attribute',
-			'/expression\s*\(/i'       => 'CSS expression()',
-			'/data:\s*image\/svg/i'    => 'embedded SVG data URI in image tag',
+			// Script execution
+			'/javascript\s*:/i'              => 'javascript: URI',
+			'/<' . 'script[\s>\/]/i'         => 'script element',
+			'/\bon\w+\s*=/i'                  => 'event handler attribute',
+			'/expression\s*\(/i'             => 'CSS expression()',
+			'/vbscript\s*:/i'                => 'vbscript: URI',
+
+			// Dangerous data URIs — covers href, src, style attributes
+			'/data:\s*image\/svg/i'          => 'embedded SVG data URI',
+			'/data:\s*text\/html/i'          => 'data: text/html URI',
+			'/data:\s*text\/javascript/i'    => 'data: JavaScript URI',
+			'/data:\s*application\//i'       => 'data: application URI',
+
+			// HTML injection vectors that survive via foreignObject or parser quirks
+			'/srcdoc\s*=/i'                  => 'srcdoc attribute',
+			'/<iframe[\s>\/]/i'              => 'iframe element',
+			'/<form[\s>\/]/i'                => 'form element',
+			'/<object[\s>\/]/i'              => 'object element',
+			'/<embed[\s>\/]/i'               => 'embed element',
+			'/<meta[\s>\/]/i'                => 'meta element',
+			'/<link[\s>\/]/i'                => 'link element',
+			'/<base[\s>\/]/i'                => 'base element',
 		];
 
 		foreach ( $patterns as $pattern => $label ) {
